@@ -1,15 +1,13 @@
-#ifndef PLJIT_LEXICALANALYZER_H
-#define PLJIT_LEXICALANALYZER_H
+#ifndef PLJIT_TOKENSTREAM_H
+#define PLJIT_TOKENSTREAM_H
 //---------------------------------------------------------------------------
 #include "CodeManager.h"
 namespace jitcompiler {
 //---------------------------------------------------------------------------
 
-class LexicalAnalyzer
-{
-    public:
-    enum TokenType
-    {
+class TokenStream {
+public:
+    enum TokenType {
         KEYWORD,
         IDENTIFIER,
         LITERAL,
@@ -25,7 +23,7 @@ class LexicalAnalyzer
         OPEN_BRACKET,
         CLOSE_BRACKET
     };
-    class Token{
+    class Token {
         // TODO check member variables
         public:
         size_t line , start_index , last_index ;
@@ -34,8 +32,8 @@ class LexicalAnalyzer
 
     };
 
-    explicit LexicalAnalyzer(CodeManager* currentManager) ;
-
+    explicit TokenStream(CodeManager* currentManager) ;
+    
     bool isInitialized() const ;
 
     Token getNextToken() const ;
@@ -43,17 +41,19 @@ class LexicalAnalyzer
     void popNextToken() ;
 
     bool isEmpty() const ;
-    private:
 
+    // TODO remove method ;
+    void reset() {
+        iterator_token = 0 ;
+    }
+private:
     CodeManager *manager ;
     std::vector<Token> streamTokens ;
     size_t iterator_token = 0 ;
     bool isCompileError ;
 
-
 };
-
 //---------------------------------------------------------------------------
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
-#endif //PLJIT_LEXICALANALYZER_H
+#endif //PLJIT_TOKENSTREAM_H

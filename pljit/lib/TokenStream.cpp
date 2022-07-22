@@ -1,4 +1,4 @@
-#include "pljit/lib/LexicalAnalyzer.h"
+#include "pljit/lib/TokenStream.h"
 #include <array>
 #include <cctype>
 #include <optional>
@@ -56,12 +56,12 @@ namespace {
 namespace jitcompiler {
 //---------------------------------------------------------------------------
 
-LexicalAnalyzer::LexicalAnalyzer(CodeManager* currentManager) : manager(currentManager) , isCompileError(false)
-{
+TokenStream::TokenStream(CodeManager* currentManager) : manager(currentManager) , isCompileError(false) {
 
     for(size_t line_index = 0 , num_lines = manager->countLines(); line_index < num_lines ; line_index++)
     {
         string_view currentLine = manager->getCurrentLine(line_index) ;
+
         for(size_t i = 0 , j = 0 , line_size = currentLine.size() ; i < line_size ; i++ , j++)
         {
             while (j < currentLine.size() && !std::isspace(static_cast<unsigned char>(currentLine[j]))) {
@@ -157,16 +157,16 @@ LexicalAnalyzer::LexicalAnalyzer(CodeManager* currentManager) : manager(currentM
         }
     }
 }
-bool LexicalAnalyzer::isInitialized() const {
+bool TokenStream::isInitialized() const {
     return !isCompileError;
 }
-void LexicalAnalyzer::popNextToken() {
+void TokenStream::popNextToken() {
     iterator_token++ ;
 }
-LexicalAnalyzer::Token LexicalAnalyzer::getNextToken() const {
+TokenStream::Token TokenStream::getNextToken() const {
     return streamTokens[iterator_token] ;
 }
-bool LexicalAnalyzer::isEmpty() const {
+bool TokenStream::isEmpty() const {
     return iterator_token == streamTokens.size() ;
 }
 

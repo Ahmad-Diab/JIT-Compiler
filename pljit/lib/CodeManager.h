@@ -16,8 +16,9 @@ class CodeManager
     std::string_view getCurrentLine(size_t index) const ;
 
     std::size_t countLines() const ;
+    // TODO parameter is CodeReference-> with member variables equivalent to parameters
+    void printCompileError(size_t currentLine , size_t start_index , size_t last_index , std::string_view expectedToken = "") ;
 
-    void printCompileError(size_t currentLine , size_t start_index , size_t last_index) ;
 
 };
 //---------------------------------------------------------------------------

@@ -11,24 +11,25 @@ CodeManager::CodeManager(string_view sourceCode) {
     {
         while (j < code_size && sourceCode[j] != '\n')
             j++ ;
-        size_t line_size = j - i ;
-        string_view currentLine = sourceCode.substr(i , line_size) ;
-        lines.emplace_back(currentLine) ;
+        lines.emplace_back(sourceCode.substr(i , j - i)) ;
         i = j ;
     }
 }
 std::string_view CodeManager::getCurrentLine(size_t index) const {
     return lines[index] ;
 }
-void CodeManager::printCompileError(size_t currentLine, size_t start_index, size_t last_index) {
+void CodeManager::printCompileError(size_t currentLine, size_t start_index, size_t last_index , std::string_view expectedToken) {
     assert(currentLine < lines.size()) ;
 
-    cout << currentLine << ":" << start_index << ": error: "<< '\n' ;
+    cout << currentLine << ":" << start_index << ": error: ";
+    if(!expectedToken.empty())
+        cout << "expected " << expectedToken << '\n' ;
+    else
+        cout << '\n' ;
     cout << lines[currentLine] << '\n' ;
     cout.width(static_cast<uint32_t>(start_index + 1)) ;
     cout << '^' ;
-    while (start_index < last_index)
-    {
+    while (start_index < last_index) {
         cout << "~" ;
         start_index ++ ;
     }
@@ -36,5 +37,6 @@ void CodeManager::printCompileError(size_t currentLine, size_t start_index, size
 std::size_t CodeManager::countLines() const {
     return lines.size() ;
 }
+
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
