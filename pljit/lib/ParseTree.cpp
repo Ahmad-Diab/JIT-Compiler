@@ -9,8 +9,7 @@ namespace jitcompiler {
 bool ParseTreeNode::isInitialized() const {
     return isCompileError;
 }
-ParseTreeNode::~ParseTreeNode() {
-}
+ParseTreeNode::~ParseTreeNode()  = default ;
 
 TerminalNode::TerminalNode(CodeManager* manager, TokenStream* tokenStream) {
     codeManager = manager ;
