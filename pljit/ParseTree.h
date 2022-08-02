@@ -13,9 +13,12 @@ class ParseTreeVisitor ;
 class ParseTreeNode {
     protected:
     // TODO codeReference for all non terminal nodes
-     CodeReference codeReference ; // will be constructed
+    //---------------------------------------------------------------------------
+     CodeReference codeReference ; // TODO supposed to be in Terminal node only
      CodeManager* codeManager ;
      TokenStream* tokenStream ;
+     //---------------------------------------------------------------------------
+
      bool isCompileError ;
      size_t node_index ;
 
@@ -58,6 +61,8 @@ public:
     virtual void accept(ParseTreeVisitor& parseTreeVisitor) const  = 0 ;
 
     size_t getNodeId() const ;
+
+    CodeReference getReference() const ;
 };
 class TerminalNode : public ParseTreeNode {
 
@@ -65,6 +70,7 @@ class TerminalNode : public ParseTreeNode {
     explicit TerminalNode(CodeManager* manager , TokenStream* tokenStream) ;
     explicit TerminalNode(CodeManager* manager , CodeReference codeReference) ;
 
+    std::string_view print_token() const;
 };
 class NonTerminalNode : public ParseTreeNode {
     protected:
@@ -84,9 +90,8 @@ class NonTerminalNode : public ParseTreeNode {
 //---------------------------------------------------------------------------
 class FunctionDeclaration final : public NonTerminalNode {
     public:
-    explicit FunctionDeclaration(CodeManager* manager , TokenStream* tokenStream)  ;
 
-//    explicit FunctionDeclaration(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit FunctionDeclaration(CodeManager* manager , TokenStream* tokenStream)  ;
 
     Type getType() const override ;
 
@@ -97,9 +102,8 @@ class FunctionDeclaration final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class ParameterDeclaration final : public NonTerminalNode {
     public:
-    explicit ParameterDeclaration(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit ParameterDeclaration(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit ParameterDeclaration(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -110,9 +114,8 @@ class ParameterDeclaration final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class VariableDeclaration final : public NonTerminalNode {
     public:
-    explicit VariableDeclaration(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit VariableDeclaration(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit VariableDeclaration(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -123,9 +126,8 @@ class VariableDeclaration final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class ConstantDeclaration final : public NonTerminalNode {
     public:
-    explicit ConstantDeclaration(CodeManager* manager , TokenStream* tokenStream)   ;
 
-//    explicit ConstantDeclaration(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit ConstantDeclaration(CodeManager* manager , TokenStream* tokenStream)   ;
 
     Type getType() const override ;
 
@@ -136,9 +138,8 @@ class ConstantDeclaration final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class DeclartorList final : public NonTerminalNode {
     public:
-    explicit DeclartorList(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit DeclartorList(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit DeclartorList(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -149,9 +150,8 @@ class DeclartorList final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class InitDeclartorList final : public NonTerminalNode {
     public:
-    explicit InitDeclartorList(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit InitDeclartorList(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit InitDeclartorList(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -163,9 +163,8 @@ class InitDeclartorList final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class InitDeclartor final : public NonTerminalNode {
     public:
-    explicit InitDeclartor(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit InitDeclartor(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit InitDeclartor(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -177,9 +176,8 @@ class InitDeclartor final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class CompoundStatement final : public NonTerminalNode {
     public:
-    explicit CompoundStatement(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit CompoundStatement(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit CompoundStatement(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -191,9 +189,8 @@ class CompoundStatement final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class StatementList final : public NonTerminalNode {
     public:
-    explicit StatementList(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit StatementList(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit StatementList(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -204,9 +201,8 @@ class StatementList final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class Statement final : public NonTerminalNode {
     public:
-    explicit Statement(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit Statement(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit Statement(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -217,9 +213,8 @@ class Statement final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class AssignmentExpression final : public NonTerminalNode {
     public:
-    explicit AssignmentExpression(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit AssignmentExpression(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit AssignmentExpression(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -230,9 +225,8 @@ class AssignmentExpression final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class AdditiveExpression final : public NonTerminalNode {
     public:
-    explicit AdditiveExpression(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit AdditiveExpression(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit AdditiveExpression(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -243,9 +237,8 @@ class AdditiveExpression final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class MultiplicativeExpression final : public NonTerminalNode {
     public:
-    explicit MultiplicativeExpression(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit MultiplicativeExpression(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit MultiplicativeExpression(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -256,9 +249,8 @@ class MultiplicativeExpression final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class UnaryExpression final : public NonTerminalNode {
     public:
-    explicit UnaryExpression(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit UnaryExpression(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit UnaryExpression(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -269,9 +261,8 @@ class UnaryExpression final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class PrimaryExpression final : public NonTerminalNode {
     public:
-    explicit PrimaryExpression(CodeManager* manager , TokenStream* tokenStream) ;
 
-//    explicit PrimaryExpression(CodeManager* manager , std::vector<std::unique_ptr<ParseTreeNode>> list) ;
+    explicit PrimaryExpression(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
 
@@ -282,6 +273,7 @@ class PrimaryExpression final : public NonTerminalNode {
 //---------------------------------------------------------------------------
 class Identifier final : public TerminalNode {
     public:
+
     explicit Identifier(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
@@ -293,6 +285,7 @@ class Identifier final : public TerminalNode {
 //---------------------------------------------------------------------------
 class Literal final : public TerminalNode {
     public:
+
     explicit Literal(CodeManager* manager , TokenStream* tokenStream) ;
 
     Type getType() const override ;
@@ -304,6 +297,7 @@ class Literal final : public TerminalNode {
 //---------------------------------------------------------------------------
 class GenericToken final : public TerminalNode {
     public:
+
     explicit GenericToken(CodeManager* manager , CodeReference codeReference) ;
 
     Type getType() const override ;
@@ -312,7 +306,6 @@ class GenericToken final : public TerminalNode {
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 
-    std::string_view print_token() const;
 };
 //---------------------------------------------------------------------------
 } // namespace jitcompiler

@@ -470,6 +470,7 @@ void PrintVisitor::visit(const PrimaryExpression& primaryExpression) {
 
 }
 void PrintVisitor::visit(const Identifier& /*identifier*/) {
+
 }
 void PrintVisitor::visit(const Literal& /*literal*/) {
 }

@@ -25,13 +25,15 @@ int main() {
     }
     else
     {
-        cout << "hello" ;
+        cout << "lexical error" << endl ;
+        return 1 ;
     }
     lexicalAnalyzer.reset() ;
     unique_ptr<FunctionDeclaration> parseTreeNode = make_unique<FunctionDeclaration>(&manager , &lexicalAnalyzer) ;
     if(parseTreeNode->recursiveDecentParser())
     {
         cout << "Syntax Analysis succeed" << "\n";
+
         PrintVisitor printVisitor ;
         parseTreeNode->accept(printVisitor);
         cout << "digraph {\n" ;

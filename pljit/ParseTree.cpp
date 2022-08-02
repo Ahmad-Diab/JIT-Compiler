@@ -1,6 +1,5 @@
-#include "ParseTree.h"
-//#include <iostream>
-#include "ParseTreeVisitor.h"
+#include "pljit/ParseTree.h"
+#include "pljit/ParseTreeVisitor.h"
 #include <iostream>
 #include <utility>
 //---------------------------------------------------------------------------
@@ -17,6 +16,9 @@ size_t ParseTreeNode::getNodeId() const{
 bool ParseTreeNode::isInitialized() const {
     return isCompileError;
 }
+CodeReference ParseTreeNode::getReference() const {
+    return codeReference ;
+}
 ParseTreeNode::~ParseTreeNode()  = default ;
 
 TerminalNode::TerminalNode(CodeManager* manager, TokenStream* tokenStream) {
@@ -26,6 +28,12 @@ TerminalNode::TerminalNode(CodeManager* manager, TokenStream* tokenStream) {
 TerminalNode::TerminalNode(CodeManager* manager ,CodeReference codeReference) {
     this->codeManager = manager ;
     this->codeReference = codeReference ;
+}
+std::string_view TerminalNode::print_token() const {
+    size_t line = codeReference.getLineRange().first ;
+    size_t begin = codeReference.getStartLineRange().first ;
+    size_t last = codeReference.getStartLineRange().second ;
+    return codeManager->getCurrentLine(line).substr(begin , last - begin + 1) ;
 }
 NonTerminalNode::NonTerminalNode(CodeManager* manager, TokenStream* tokenStream) {
     codeManager = manager ;
@@ -45,8 +53,7 @@ std::unique_ptr<ParseTreeNode> NonTerminalNode::releaseChild(const size_t index)
 ParseTreeNode::Type FunctionDeclaration::getType() const {
     return Type::FUNCTION_DECLARATION ;
 }
-FunctionDeclaration::FunctionDeclaration(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager , tokenStream)
-{
+FunctionDeclaration::FunctionDeclaration(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager , tokenStream) {
     node_index = node_index_incrementer++ ;
 }
 bool FunctionDeclaration::recursiveDecentParser() {
@@ -827,12 +834,6 @@ bool GenericToken::recursiveDecentParser() {
 }
 void GenericToken::accept(ParseTreeVisitor& parseTreeVisitor) const {
     parseTreeVisitor.visit(*this) ;
-}
-string_view GenericToken::print_token() const {
-    size_t line = codeReference.getLineRange().first ;
-    size_t begin = codeReference.getStartLineRange().first ;
-    size_t last = codeReference.getStartLineRange().second ;
-    return codeManager->getCurrentLine(line).substr(begin , last - begin + 1) ;
 }
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
