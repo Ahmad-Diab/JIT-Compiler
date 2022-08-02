@@ -1,4 +1,4 @@
-#include "pljit/lib/CodeManager.h"
+#include "CodeManager.h"
 #include <cassert>
 #include <iostream>
 //---------------------------------------------------------------------------

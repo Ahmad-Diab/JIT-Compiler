@@ -1,7 +1,7 @@
 set(PLJIT_SOURCES
     # add your source files here
 
-        lib/CodeManager.cpp lib/TokenStream.cpp lib/ParseTree.cpp lib/CodeReference.h lib/CodeReference.cpp)
+        CodeManager.cpp TokenStream.cpp ParseTree.cpp CodeReference.h CodeReference.cpp AST.h AST.cpp ParseTreeVisitor.h PrintParseTreeVisitor.h PrintParseTreeVisitor.cpp)
 
 add_library(pljit_core ${PLJIT_SOURCES})
 target_include_directories(pljit_core PUBLIC ${CMAKE_SOURCE_DIR})

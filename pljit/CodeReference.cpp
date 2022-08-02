@@ -1,4 +1,4 @@
-#include "pljit/lib/CodeReference.h"
+#include "CodeReference.h"
 
 //---------------------------------------------------------------------------
 namespace jitcompiler {

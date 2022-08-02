@@ -1,4 +1,4 @@
-#include "pljit/lib/TokenStream.h"
+#include "TokenStream.h"
 #include <array>
 #include <cctype>
 #include <optional>

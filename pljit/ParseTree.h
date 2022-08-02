@@ -2,10 +2,12 @@
 #define PLJIT_PARSETREE_H
 
 //---------------------------------------------------------------------------
-#include "pljit/lib/TokenStream.h"
-#include "pljit/lib/CodeReference.h"
+#include "CodeReference.h"
+#include "TokenStream.h"
 #include <memory>
 namespace jitcompiler {
+//---------------------------------------------------------------------------
+class ParseTreeVisitor ;
 //---------------------------------------------------------------------------
 /// Base class for ParseTree
 class ParseTreeNode {
@@ -15,6 +17,9 @@ class ParseTreeNode {
      CodeManager* codeManager ;
      TokenStream* tokenStream ;
      bool isCompileError ;
+     size_t node_index ;
+
+     static size_t node_index_incrementer ;
 public:
     /// Types of ParseTreeNodes
     enum class Type{
@@ -49,12 +54,16 @@ public:
     virtual bool recursiveDecentParser() = 0 ;
 
     virtual bool isInitialized() const ;
+
+    virtual void accept(ParseTreeVisitor& parseTreeVisitor) const  = 0 ;
+
+    size_t getNodeId() const ;
 };
 class TerminalNode : public ParseTreeNode {
 
     public:
     explicit TerminalNode(CodeManager* manager , TokenStream* tokenStream) ;
-    explicit TerminalNode(CodeReference codeReference) ;
+    explicit TerminalNode(CodeManager* manager , CodeReference codeReference) ;
 
 };
 class NonTerminalNode : public ParseTreeNode {
@@ -65,11 +74,11 @@ class NonTerminalNode : public ParseTreeNode {
 
     explicit NonTerminalNode(CodeManager* manager , TokenStream* tokenStream)  ;
 
-    virtual const ParseTreeNode & getChild(const size_t index) const;
+    const ParseTreeNode & getChild(const size_t index) const;
 
-    virtual std::size_t num_children() const ;
+    std::size_t num_children() const ;
 
-    virtual std::unique_ptr<ParseTreeNode> releaseChild(const size_t index) ;
+    std::unique_ptr<ParseTreeNode> releaseChild(const size_t index) ;
 
 };
 //---------------------------------------------------------------------------
@@ -82,6 +91,8 @@ class FunctionDeclaration final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class ParameterDeclaration final : public NonTerminalNode {
@@ -93,6 +104,8 @@ class ParameterDeclaration final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class VariableDeclaration final : public NonTerminalNode {
@@ -104,6 +117,8 @@ class VariableDeclaration final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class ConstantDeclaration final : public NonTerminalNode {
@@ -115,6 +130,8 @@ class ConstantDeclaration final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class DeclartorList final : public NonTerminalNode {
@@ -126,6 +143,8 @@ class DeclartorList final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class InitDeclartorList final : public NonTerminalNode {
@@ -137,6 +156,9 @@ class InitDeclartorList final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
+
 };
 //---------------------------------------------------------------------------
 class InitDeclartor final : public NonTerminalNode {
@@ -148,6 +170,9 @@ class InitDeclartor final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
+
 };
 //---------------------------------------------------------------------------
 class CompoundStatement final : public NonTerminalNode {
@@ -159,6 +184,9 @@ class CompoundStatement final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
+
 };
 //---------------------------------------------------------------------------
 class StatementList final : public NonTerminalNode {
@@ -170,6 +198,8 @@ class StatementList final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class Statement final : public NonTerminalNode {
@@ -181,6 +211,8 @@ class Statement final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class AssignmentExpression final : public NonTerminalNode {
@@ -192,6 +224,8 @@ class AssignmentExpression final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class AdditiveExpression final : public NonTerminalNode {
@@ -203,6 +237,8 @@ class AdditiveExpression final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class MultiplicativeExpression final : public NonTerminalNode {
@@ -214,6 +250,8 @@ class MultiplicativeExpression final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class UnaryExpression final : public NonTerminalNode {
@@ -225,6 +263,8 @@ class UnaryExpression final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class PrimaryExpression final : public NonTerminalNode {
@@ -236,6 +276,8 @@ class PrimaryExpression final : public NonTerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class Identifier final : public TerminalNode {
@@ -245,6 +287,8 @@ class Identifier final : public TerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class Literal final : public TerminalNode {
@@ -254,15 +298,21 @@ class Literal final : public TerminalNode {
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
 //---------------------------------------------------------------------------
 class GenericToken final : public TerminalNode {
     public:
-    explicit GenericToken(CodeReference codeReference) ;
+    explicit GenericToken(CodeManager* manager , CodeReference codeReference) ;
 
     Type getType() const override ;
 
     bool recursiveDecentParser() override;
+
+    void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
+
+    std::string_view print_token() const;
 };
 //---------------------------------------------------------------------------
 } // namespace jitcompiler

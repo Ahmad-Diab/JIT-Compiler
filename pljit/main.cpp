@@ -1,8 +1,9 @@
-#include "lib/CodeManager.h"
-#include "lib/TokenStream.h"
-#include "pljit/lib/ParseTree.h"
+#include "CodeManager.h"
+#include "TokenStream.h"
+#include "pljit/ParseTree.h"
 #include <array>
 #include <iostream>
+#include "PrintParseTreeVisitor.h"
 //---------------------------------------------------------------------------
 using namespace std;
 using namespace jitcompiler ;
@@ -31,6 +32,11 @@ int main() {
     if(parseTreeNode->recursiveDecentParser())
     {
         cout << "Syntax Analysis succeed" << "\n";
+        PrintVisitor printVisitor ;
+        parseTreeNode->accept(printVisitor);
+        cout << "digraph {\n" ;
+        cout << printVisitor.getOutput()  ;
+        cout << "}\n" ;
     }
     else
     {

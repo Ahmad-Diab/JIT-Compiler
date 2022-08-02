@@ -19,7 +19,6 @@ class CodeManager
     // TODO parameter is CodeReference-> with member variables equivalent to parameters
     void printCompileError(size_t currentLine , size_t start_index , size_t last_index , std::string_view expectedToken = "") ;
 
-
 };
 //---------------------------------------------------------------------------
 } //namespace jitcompiler
