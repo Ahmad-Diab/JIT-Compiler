@@ -19,6 +19,9 @@ bool ParseTreeNode::isInitialized() const {
 CodeReference ParseTreeNode::getReference() const {
     return codeReference ;
 }
+CodeManager* ParseTreeNode::getManager() const {
+    return codeManager ;
+}
 ParseTreeNode::~ParseTreeNode()  = default ;
 
 TerminalNode::TerminalNode(CodeManager* manager, TokenStream* tokenStream) {

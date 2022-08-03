@@ -63,6 +63,8 @@ public:
     size_t getNodeId() const ;
 
     CodeReference getReference() const ;
+
+    CodeManager* getManager() const ;
 };
 class TerminalNode : public ParseTreeNode {
 

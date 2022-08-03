@@ -1,16 +1,19 @@
+#include "AST.h"
 #include "CodeManager.h"
+#include "PrintASTVistor.h"
+#include "PrintParseTreeVisitor.h"
 #include "TokenStream.h"
 #include "pljit/ParseTree.h"
 #include <array>
 #include <iostream>
-#include "PrintParseTreeVisitor.h"
+
 //---------------------------------------------------------------------------
 using namespace std;
 using namespace jitcompiler ;
 //---------------------------------------------------------------------------
 
 int main() {
-    string source_code = "PARAM width , height , depth ; \n VAR volume ; \n CONST density = 2400 ;\nBEGIN\nvolume := width * height * depth ;\nRETURN density * volume\nEND .";
+    string source_code = "PARAM width , height , depth ; \n VAR volume ; \n CONST density = 2400 ;\nBEGIN\nvolume := width * height * depth ;\nvolume := volume + 1 ;\nRETURN density * volume\nEND .";
     CodeManager manager (source_code) ;
     TokenStream lexicalAnalyzer(&manager) ;
     if(lexicalAnalyzer.isInitialized())
@@ -34,15 +37,22 @@ int main() {
     {
         cout << "Syntax Analysis succeed" << "\n";
 
-        PrintVisitor printVisitor ;
-        parseTreeNode->accept(printVisitor);
-        cout << "digraph {\n" ;
-        cout << printVisitor.getOutput()  ;
-        cout << "}\n" ;
+//        PrintVisitor printVisitor ;
+//        parseTreeNode->accept(printVisitor);
+//        cout << "digraph {\n" ;
+//        cout << printVisitor.getOutput()  ;
+//        cout << "}\n" ;
     }
     else
     {
         cout << "Syntax Analysis failed" << "\n";
     }
+    FunctionAST functionAst(parseTreeNode , &manager) ;
+    PrintASTVistor  printAstVistor ;
+    functionAst.accept(printAstVistor) ;
+    cout << "digraph {\n" ;
+    cout << printAstVistor.getOutput() ;
+    cout << "}\n" ;
+
 }
 //---------------------------------------------------------------------------
