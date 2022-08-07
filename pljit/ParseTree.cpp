@@ -57,7 +57,6 @@ ParseTreeNode::Type FunctionDeclaration::getType() const {
     return Type::FUNCTION_DECLARATION ;
 }
 FunctionDeclaration::FunctionDeclaration(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager , tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool FunctionDeclaration::recursiveDecentParser() {
     { // PARAMETER
@@ -77,7 +76,7 @@ bool FunctionDeclaration::recursiveDecentParser() {
     }
     { // COMPOUND
         unique_ptr<CompoundStatement> compound_ptr = make_unique<CompoundStatement>(codeManager, tokenStream);
-        if (compound_ptr.get()->recursiveDecentParser()) // optional
+        if (compound_ptr.get()->recursiveDecentParser())
             children.emplace_back(move(compound_ptr));
         else {
             isCompileError = true;
@@ -85,7 +84,12 @@ bool FunctionDeclaration::recursiveDecentParser() {
         }
     }
     { // TERMINATOR
-        if (tokenStream->getNextToken().type == TokenStream::TokenType::TERMINATOR) {
+        if(tokenStream->isEmpty())
+        {
+            codeManager->printCompileError(1 , ".") ;
+            return false ;
+        }
+        else if (tokenStream->getNextToken().type == TokenStream::TokenType::TERMINATOR) {
             TokenStream::Token token = tokenStream->getNextToken();
             tokenStream->popNextToken();
             unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
@@ -98,6 +102,7 @@ bool FunctionDeclaration::recursiveDecentParser() {
 
         }
     }
+    node_index = node_index_incrementer++ ;
     return true;
 }
 void FunctionDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -108,7 +113,6 @@ ParseTreeNode::Type ParameterDeclaration::getType() const {
     return Type::PARAMETER_DECLARATION ;
 }
 ParameterDeclaration::ParameterDeclaration(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool ParameterDeclaration::recursiveDecentParser() {
     {
@@ -160,6 +164,7 @@ bool ParameterDeclaration::recursiveDecentParser() {
             return false ;
         }
     }
+    node_index = node_index_incrementer++ ;
     return true;
 }
 void ParameterDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -219,6 +224,7 @@ bool VariableDeclaration::recursiveDecentParser() {
             return false ;
         }
     }
+    node_index = node_index_incrementer++ ;
     return true ;
 }
 void VariableDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -229,7 +235,6 @@ ParseTreeNode::Type ConstantDeclaration::getType() const {
     return Type::CONSTANT_DECLARATION ;
 }
 ConstantDeclaration::ConstantDeclaration(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool ConstantDeclaration::recursiveDecentParser() {
     {
@@ -278,6 +283,7 @@ bool ConstantDeclaration::recursiveDecentParser() {
             return false ;
         }
     }
+    node_index = node_index_incrementer++ ;
     return true;
 }
 void ConstantDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -287,7 +293,6 @@ ParseTreeNode::Type DeclartorList::getType() const {
     return Type::DECLARATOR_LIST ;
 }
 DeclartorList::DeclartorList(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool DeclartorList::recursiveDecentParser() {
     {
@@ -318,6 +323,7 @@ bool DeclartorList::recursiveDecentParser() {
             }
         }
     }
+    node_index = node_index_incrementer++ ;
     return true;
 }
 void DeclartorList::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -327,7 +333,6 @@ ParseTreeNode::Type InitDeclartorList::getType() const {
     return Type::INIT_DECLARATOR_LIST ;
 }
 InitDeclartorList::InitDeclartorList(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool InitDeclartorList::recursiveDecentParser() {
     {
@@ -356,6 +361,7 @@ bool InitDeclartorList::recursiveDecentParser() {
             }
         }
     }
+    node_index = node_index_incrementer++ ;
     return true;
 }
 void InitDeclartorList::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -365,7 +371,6 @@ ParseTreeNode::Type InitDeclartor::getType() const {
     return Type::INIT_DECLARATOR ;
 }
 InitDeclartor::InitDeclartor(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool InitDeclartor::recursiveDecentParser() {
     {
@@ -403,6 +408,7 @@ bool InitDeclartor::recursiveDecentParser() {
             return false ;
         }
     }
+    node_index = node_index_incrementer++ ;
     return true ;
 }
 void InitDeclartor::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -412,7 +418,6 @@ ParseTreeNode::Type CompoundStatement::getType() const {
     return Type::COMPOUND_STATEMENT ;
 }
 CompoundStatement::CompoundStatement(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool CompoundStatement::recursiveDecentParser() {
     {
@@ -468,6 +473,7 @@ bool CompoundStatement::recursiveDecentParser() {
             return false ;
         }
     }
+    node_index = node_index_incrementer++ ;
     return true ;
 }
 void CompoundStatement::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -477,7 +483,6 @@ ParseTreeNode::Type StatementList::getType() const {
     return Type::STATEMENT_LIST ;
 }
 StatementList::StatementList(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool StatementList::recursiveDecentParser() {
     {
@@ -507,6 +512,7 @@ bool StatementList::recursiveDecentParser() {
             }
         }
     }
+    node_index = node_index_incrementer++ ;
     return true ;
 }
 void StatementList::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -516,7 +522,6 @@ ParseTreeNode::Type Statement::getType() const {
     return Type::STATEMENT ;
 }
 Statement::Statement(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool Statement::recursiveDecentParser() {
     if(tokenStream->getNextToken().type == TokenStream::TokenType::KEYWORD) {
@@ -557,6 +562,7 @@ bool Statement::recursiveDecentParser() {
             return false ;
         }
     }
+    node_index = node_index_incrementer++ ;
     return true ;
 }
 void Statement::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -566,7 +572,6 @@ ParseTreeNode::Type AdditiveExpression::getType() const {
     return Type::ADDITIVE_EXPRESSION ;
 }
 AdditiveExpression::AdditiveExpression(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool AdditiveExpression::recursiveDecentParser() {
     {
@@ -596,6 +601,7 @@ bool AdditiveExpression::recursiveDecentParser() {
             }
         }
     }
+    node_index = node_index_incrementer++ ;
     return true;
 }
 void AdditiveExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -605,7 +611,6 @@ ParseTreeNode::Type MultiplicativeExpression::getType() const {
     return Type::MULTIPLICATIVE_EXPRESSION ;
 }
 MultiplicativeExpression::MultiplicativeExpression(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool MultiplicativeExpression::recursiveDecentParser() {
     {
@@ -634,6 +639,7 @@ bool MultiplicativeExpression::recursiveDecentParser() {
             }
         }
     }
+    node_index = node_index_incrementer++ ;
     return true ;
 }
 void MultiplicativeExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -643,7 +649,6 @@ ParseTreeNode::Type AssignmentExpression::getType() const {
     return Type::ASSIGNMENT_EXPRESSION ;
 }
 AssignmentExpression::AssignmentExpression(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool AssignmentExpression::recursiveDecentParser() {
     {
@@ -678,6 +683,7 @@ bool AssignmentExpression::recursiveDecentParser() {
             return false ;
         }
     }
+    node_index = node_index_incrementer++ ;
     return true ;
 }
 void AssignmentExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -687,7 +693,6 @@ ParseTreeNode::Type UnaryExpression::getType() const {
     return Type::UNARY_EXPRESSION ;
 }
 UnaryExpression::UnaryExpression(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool UnaryExpression::recursiveDecentParser() {
     {
@@ -705,6 +710,7 @@ bool UnaryExpression::recursiveDecentParser() {
             return false ;
         }
     }
+    node_index = node_index_incrementer++ ;
     return true ;
 }
 void UnaryExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -714,7 +720,6 @@ ParseTreeNode::Type PrimaryExpression::getType() const {
     return Type::PRIMARY_EXPRESSION ;
 }
 PrimaryExpression::PrimaryExpression(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool PrimaryExpression::recursiveDecentParser() {
     if(tokenStream->getNextToken().type == TokenStream::TokenType::IDENTIFIER)
@@ -775,6 +780,7 @@ bool PrimaryExpression::recursiveDecentParser() {
         isCompileError = true ;
         return false ;
     }
+    node_index = node_index_incrementer++ ;
     return true ;
 }
 void PrimaryExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -784,7 +790,6 @@ ParseTreeNode::Type Identifier::getType() const {
     return Type::IDENTIFIER;
 }
 Identifier::Identifier(CodeManager* manager, TokenStream* tokenStream) : TerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 bool Identifier::recursiveDecentParser() {
     if(tokenStream->getNextToken().type == TokenStream::TokenType::IDENTIFIER) {
@@ -797,13 +802,13 @@ bool Identifier::recursiveDecentParser() {
         isCompileError = false ;
         return false ;
     }
+    node_index = node_index_incrementer++ ;
     return true ;
 }
 void Identifier::accept(ParseTreeVisitor& parseTreeVisitor) const {
     parseTreeVisitor.visit(*this) ;
 }
 Literal::Literal(CodeManager* manager, TokenStream* tokenStream) : TerminalNode(manager, tokenStream) {
-    node_index = node_index_incrementer++ ;
 }
 ParseTreeNode::Type Literal::getType() const {
     return Type::LITERAL ;
@@ -820,6 +825,7 @@ bool Literal::recursiveDecentParser() {
         isCompileError = false ;
         return false ;
     }
+    node_index = node_index_incrementer++ ;
     return true ;
 }
 void Literal::accept(ParseTreeVisitor& parseTreeVisitor) const {
@@ -829,7 +835,6 @@ ParseTreeNode::Type GenericToken::getType() const {
     return Type::GENERIC_TOKEN ;
 }
 GenericToken::GenericToken(CodeManager* codeManager , CodeReference codeReference) : TerminalNode(codeManager , codeReference) {
-
     node_index = node_index_incrementer++ ;
 }
 bool GenericToken::recursiveDecentParser() {

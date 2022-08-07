@@ -3,6 +3,7 @@
 
 //---------------------------------------------------------------------------
 #include "CodeReference.h"
+#include "PrintParseTreeVisitor.h"
 #include "TokenStream.h"
 #include <memory>
 namespace jitcompiler {
@@ -56,7 +57,7 @@ public:
 
     virtual bool recursiveDecentParser() = 0 ;
 
-    virtual bool isInitialized() const ;
+    bool isInitialized() const ;
 
     virtual void accept(ParseTreeVisitor& parseTreeVisitor) const  = 0 ;
 
@@ -65,6 +66,13 @@ public:
     CodeReference getReference() const ;
 
     CodeManager* getManager() const ;
+
+    std::string print_dot() {
+        PrintVisitor printVisitor ;
+        this->accept(printVisitor) ;
+        std::string result = "digraph {\n" +  printVisitor.getOutput() + "}\n";
+        return result ;
+    }
 };
 class TerminalNode : public ParseTreeNode {
 
@@ -136,6 +144,7 @@ class ConstantDeclaration final : public NonTerminalNode {
     bool recursiveDecentParser() override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
+
 };
 //---------------------------------------------------------------------------
 class DeclartorList final : public NonTerminalNode {

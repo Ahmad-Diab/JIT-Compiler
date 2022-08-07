@@ -33,8 +33,6 @@ public:
     };
 
     explicit TokenStream(CodeManager* currentManager) ;
-    
-    bool isInitialized() const ;
 
     Token getNextToken() const ;
 
@@ -50,7 +48,6 @@ private:
     CodeManager *manager ;
     std::vector<Token> streamTokens ;
     size_t iterator_token = 0 ;
-    bool isCompileError ;
 
 };
 //---------------------------------------------------------------------------

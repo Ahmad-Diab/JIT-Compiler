@@ -28,7 +28,7 @@ class PrintVisitor  : public ParseTreeVisitor{
     void visit(const Literal& literal) override ;
     void visit(const GenericToken& genericToken) override;
     void reset()  ;
-    std::string getOutput() const;
+    std::string getOutput() ;
 };
 
 //---------------------------------------------------------------------------

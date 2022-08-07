@@ -1,6 +1,8 @@
 #include "pljit/AST.h"
 #include "ASTVisitor.h"
+#include "pljit/EvaluationContext.h"
 #include <iostream>
+#include <unordered_set>
 //---------------------------------------------------------------------------
 using namespace std ;
 //---------------------------------------------------------------------------
@@ -118,36 +120,20 @@ namespace {
                 );
         return statementAst ;
     }
-}
+} // anonymous namespace
 
 size_t ASTNode :: node_index_incrementer {0};
-bool SymbolTable::DeclarationMap::isDeclared(std::string_view identifier) const {
-    return declarationReference.find(identifier) != declarationReference.end() ;
-}
-bool SymbolTable::DeclarationMap::isDefined(std::string_view identifier) const {
-    return declarationValue.find(identifier) != declarationValue.end() ;
-}
-void SymbolTable::DeclarationMap::insert(std::string_view identifier, CodeReference codeReference) {
-    assert(!isDeclared(identifier));
-    declarationReference[identifier]= codeReference ;
-}
-void SymbolTable::DeclarationMap::set_identifer(std::string_view identifier, int64_t value) {
-    assert(isDeclared(identifier)) ;
-    declarationValue[identifier] = value ;
-}
-int64_t SymbolTable::DeclarationMap::get_identifier(std::string_view identifier) {
-    assert(isDefined(identifier));
-    return declarationValue[identifier] ;
-}
+
 bool SymbolTable::addAttributes(const ParameterDeclaration& declaration) {
 
     const DeclartorList& declartorList = static_cast<const DeclartorList&>(declaration.getChild(1)) ;
+    size_t parameter_index = 0 ;
     for(size_t index = 0 ; index < declartorList.num_children() ; ++index) {
         const TerminalNode& curChild = static_cast<const TerminalNode&>(declartorList.getChild(index)) ;
-
         if (curChild.getType() == ParseTreeNode::Type::IDENTIFIER) {
             if(!this->isDeclared(curChild.print_token())) {
-                parameterDeclaration.insert(curChild.print_token(), curChild.getReference());
+                this->insert(curChild.print_token(), AttributeType::PARAMETER ,curChild.getReference() , parameter_index , nullopt);
+                parameter_index++ ;
             }
             else {
                 // TODO compile error
@@ -161,11 +147,12 @@ bool SymbolTable::addAttributes(const ParameterDeclaration& declaration) {
 
 bool SymbolTable::addAttributes(const VariableDeclaration& declaration) {
     const DeclartorList& declartorList = static_cast<const DeclartorList&>(declaration.getChild(1)) ;
+    size_t variable_index = 0 ;
     for(size_t index = 0 ; index < declartorList.num_children() ; ++index) {
         const TerminalNode& curChild = static_cast<const TerminalNode&>(declartorList.getChild(index)) ;
         if (curChild.getType() == ParseTreeNode::Type::IDENTIFIER) {
             if(!this->isDeclared(curChild.print_token()))
-                variableDeclaration.insert(curChild.print_token() , curChild.getReference()) ;
+                this->insert(curChild.print_token() , AttributeType::VARIABLE, curChild.getReference() , variable_index++ , nullopt) ;
             else {
                 // TODO compiler error
                 isCompiled = false ;
@@ -177,6 +164,7 @@ bool SymbolTable::addAttributes(const VariableDeclaration& declaration) {
 }
 bool SymbolTable::addAttributes(const ConstantDeclaration& declaration) {
     const InitDeclartorList& declartorList = static_cast<const InitDeclartorList&>(declaration.getChild(1)) ;
+    size_t constant_index = 0 ;
     for(size_t index = 0 ; index < declartorList.num_children() ; ++index) {
         const ParseTreeNode& curChild = static_cast<const ParseTreeNode&>(declartorList.getChild(index)) ;
         if (curChild.getType() == ParseTreeNode::Type::INIT_DECLARATOR) {
@@ -185,8 +173,8 @@ bool SymbolTable::addAttributes(const ConstantDeclaration& declaration) {
             const Literal& literal = static_cast<const Literal&>(init_declarator.getChild(2)) ;
             int64_t value = str_to_int64(literal.print_token()) ;
             if(!isDeclared(identifier.print_token())) {
-                constantDeclaration.insert(identifier.print_token(), curChild.getReference());
-                constantDeclaration.set_identifer(identifier.print_token(), value);
+                insert(identifier.print_token() , AttributeType::CONSTANT, curChild.getReference() , constant_index , value);
+                constant_index++ ;
             }
             else {
                 // TODO compile error
@@ -218,17 +206,23 @@ SymbolTable::SymbolTable(const FunctionDeclaration& functionDeclaration) {
     }
 }
 bool SymbolTable::isDeclared(std::string_view identifier) const {
-    return parameterDeclaration.isDeclared(identifier) || variableDeclaration.isDeclared(identifier) || constantDeclaration.isDeclared(identifier) ;
+    return tableIdentifiers.find(identifier) != tableIdentifiers.end() ;
 }
-bool SymbolTable::isDefined(std::string_view identifier) const {
-    return parameterDeclaration.isDefined(identifier) || variableDeclaration.isDefined(identifier) || constantDeclaration.isDefined(identifier) ;
-}
-bool SymbolTable::isConstant(std::string_view identifier) const {
-    return constantDeclaration.isDeclared(identifier) ;
+
+bool SymbolTable::isConstant(std::string_view identifier)  {
+    return  get<0>(tableIdentifiers[identifier]) == AttributeType::CONSTANT;
 }
 bool SymbolTable::isComplied() const {
     return isCompiled ;
 }
+void SymbolTable::insert(std::string_view identifier , AttributeType type ,CodeReference codeReference , size_t index , std::optional<int64_t> value) {
+    assert(!isDeclared(identifier)) ;
+    tableIdentifiers[identifier] = make_tuple(type , codeReference , index , value) ;
+}
+const unordered_map<std::string_view, std::tuple<SymbolTable::AttributeType, CodeReference, size_t, std::optional<int64_t>>>& SymbolTable::getTableContent() const {
+    return tableIdentifiers ;
+}
+
 //---------------------------------------------------------------------------
 ASTNode::Type FunctionAST::getType() const{
     return ASTNode::Type::FUNCTION ;
@@ -237,7 +231,7 @@ FunctionAST::FunctionAST(std::unique_ptr<FunctionDeclaration> &functionDeclarati
     this->codeManager = manager ;
     node_index = node_index_incrementer++ ;
 
-    symbolTable = make_unique<SymbolTable>(*functionDeclaration.get()) ;
+    symbolTable = make_unique<SymbolTable>(*functionDeclaration) ;
     size_t compound_index = 0 ;
     for(size_t index = 0 ; index < functionDeclaration->num_children() ; index++)
     {
@@ -250,6 +244,8 @@ FunctionAST::FunctionAST(std::unique_ptr<FunctionDeclaration> &functionDeclarati
     }
     const CompoundStatement& compoundStatement = static_cast<const CompoundStatement&>(functionDeclaration->getChild(compound_index));
     const StatementList& statementList = static_cast<const StatementList&>(compoundStatement.getChild(1));
+    unordered_set<string_view> initializedVariables ; // TODO Handling uninitialized variables
+    bool returnStatementTriggered = false ;
     for(size_t statement_index = 0 ; statement_index < statementList.num_children() ; statement_index++)
     {
         const ParseTreeNode& curChild = statementList.getChild(statement_index) ;
@@ -257,17 +253,23 @@ FunctionAST::FunctionAST(std::unique_ptr<FunctionDeclaration> &functionDeclarati
         {
             const Statement &statement = static_cast<const Statement&>(statementList.getChild(statement_index));
             children.emplace_back(analyzeStatement(statement)) ;
+            if(children.front().get()->getType() == ASTNode::Type::RETURN_STATEMENT)
+                returnStatementTriggered = true ;
         }
     }
+    if(!returnStatementTriggered)
+    {
+        // TODO missing return statement ;
+//        manager->
+    }
 }
-const StatementAST& FunctionAST::getStatement(const size_t index) const {
-
-    return *children[index].get() ;
+const StatementAST& FunctionAST::getStatement(size_t index) const {
+    return *children[index] ;
 }
 std::size_t FunctionAST::statement_size() const {
     return children.size() ;
 }
-std::unique_ptr<StatementAST> FunctionAST::releaseStatement(const size_t index) {
+std::unique_ptr<StatementAST> FunctionAST::releaseStatement(size_t index) {
     unique_ptr<StatementAST> node = move(children[index]);
     return node ;
 }
@@ -275,6 +277,53 @@ void FunctionAST::accept(ASTVisitor& astVistor) const
 {
     astVistor.visit(*this) ;
 }
+std::optional<int64_t> FunctionAST::evaluate(EvaluationContext& evaluationContext) const {
+
+    for(const unique_ptr<StatementAST> & statementAst : children)
+    {
+        if(statementAst->getType() == ASTNode::Type::RETURN_STATEMENT)
+            return statementAst->evaluate(evaluationContext) ;
+        else {
+            const AssignmentStatementAST& curr = static_cast<const AssignmentStatementAST&>(*statementAst.get()) ;
+            string_view identifier = curr.getLeftIdentifier().print_token() ;
+            optional<int64_t> result = statementAst->evaluate(evaluationContext) ;
+            if(result)
+                evaluationContext.updateIdentifier(identifier , result.value());
+            else
+                return nullopt ;
+        }
+    }
+    return nullopt ;
+}
+//void FunctionAST::optimize(EvaluationContext& evaluationContext, optional<int64_t>& evaluatedValue) {
+//
+//    size_t statement_size = 0 ;
+//    for(unique_ptr<StatementAST> & currStatement : this->children) {
+//        std::optional<int64_t> assignmentValue = nullopt ;
+//        currStatement->optimize(currStatement , evaluationContext , assignmentValue) ;
+//        statement_size ++ ;
+//        if(currStatement->getType() == ASTNode::Type::RETURN_STATEMENT) {
+//
+//            if(assignmentValue) {
+////                unique_ptr<ExpressionAST> input = make_unique<LiteralAST>(assignmentValue.value()) ;
+//                unique_ptr<ReturnStatementAST> returnStatementAst = make_unique<ReturnStatementAST>(codeManager , make_unique<LiteralAST>(assignmentValue.value())) ;
+//                children.clear() ;
+//                children.emplace_back(move(returnStatementAst)) ;
+//                evaluatedValue = assignmentValue ;
+//            }
+//            else
+//                children.resize(statement_size) ;
+//            return ;
+//        }
+//        else {
+//            unique_ptr<AssignmentStatementAST>assignmentStatement(static_cast<AssignmentStatementAST*>(currStatement.get()));
+//            if(assignmentValue) {
+//                evaluationContext.updateIdentifier(assignmentStatement->getLeftIdentifier().print_token() , assignmentValue.value()) ;
+//            }
+//        }
+//    }
+//}
+
 ASTNode::Type AssignmentStatementAST::getType() const {
     return ASTNode::Type::ASSIGNMENT_STATEMENT;
 }
@@ -286,14 +335,14 @@ AssignmentStatementAST::AssignmentStatementAST(CodeManager* manager, std::unique
     this->rightExpression = move(right) ;
 }
 const IdentifierAST& AssignmentStatementAST::getLeftIdentifier() const {
-    return *leftIdentifier.get() ;
+    return *leftIdentifier ;
 }
 std::unique_ptr<IdentifierAST> AssignmentStatementAST::releaseLeftIdentifier() {
     unique_ptr<IdentifierAST> node = move(leftIdentifier) ;
     return node ;
 }
 const ExpressionAST& AssignmentStatementAST::getRightExpression() const {
-    return *rightExpression.get() ;
+    return *rightExpression ;
 }
 std::unique_ptr<ExpressionAST> AssignmentStatementAST::releaseRightExpression() {
     unique_ptr<ExpressionAST> node = move(rightExpression) ;
@@ -302,6 +351,10 @@ std::unique_ptr<ExpressionAST> AssignmentStatementAST::releaseRightExpression() 
 void AssignmentStatementAST::accept(ASTVisitor& astVistor) const {
     astVistor.visit(*this) ;
 }
+std::optional<int64_t> AssignmentStatementAST::evaluate(EvaluationContext& evaluationContext) const {
+    return rightExpression->evaluate(evaluationContext);
+}
+
 ASTNode::Type ReturnStatementAST::getType() const {
     return ASTNode::Type::RETURN_STATEMENT;
 }
@@ -319,6 +372,10 @@ std::unique_ptr<ExpressionAST> ReturnStatementAST::releaseInput() {
 void ReturnStatementAST::accept(ASTVisitor& astVistor) const {
     astVistor.visit(*this) ;
 }
+std::optional<int64_t> ReturnStatementAST::evaluate(EvaluationContext& evaluationContext) const {
+    return input->evaluate(evaluationContext);
+}
+
 ASTNode::Type BinaryExpressionAST::getType() const {
     return ASTNode::Type::BINARY_EXPRESSION;
 }
@@ -348,6 +405,25 @@ std::unique_ptr<ExpressionAST> BinaryExpressionAST::releaseRightExpression() {
 void BinaryExpressionAST::accept(ASTVisitor& astVistor) const {
     astVistor.visit(*this) ;
 }
+std::optional<int64_t> BinaryExpressionAST::evaluate(EvaluationContext& evaluationContext) const {
+
+    optional<int64_t> leftResult = leftExpression->evaluate(evaluationContext) ;
+    optional<int64_t> rightResult = rightExpression->evaluate(evaluationContext) ;
+    if(!leftResult || !rightResult)
+        return nullopt ;
+    switch (getBinaryType()) {
+        case BinaryType::PLUS: return leftResult.value() + rightResult.value();
+        case BinaryType::MINUS: return leftResult.value() - rightResult.value();
+        case BinaryType::MULTIPLY: return leftResult.value() * rightResult.value();
+        case BinaryType::DIVIDE:
+        {
+            // TODO error for division by zero
+            return leftResult.value() / rightResult.value() ;
+        };
+    }
+    return nullopt;
+}
+
 ASTNode::Type UnaryExpressionAST::getType() const {
     return ASTNode::Type::UNARY_EXPRESSION;
 }
@@ -368,6 +444,13 @@ std::unique_ptr<ExpressionAST> UnaryExpressionAST::releaseInput() {
 void UnaryExpressionAST::accept(ASTVisitor& astVistor) const {
     astVistor.visit(*this) ;
 }
+std::optional<int64_t> UnaryExpressionAST::evaluate(EvaluationContext& evaluationContext) const {
+    optional<int64_t> result = input->evaluate(evaluationContext) ;
+    if(getUnaryType() == UnaryType::MINUS)
+        return -result.value() ;
+    return result ;
+}
+
 ASTNode::Type IdentifierAST::getType() const {
     return ASTNode::Type::IDENTIFIER;
 }
@@ -383,29 +466,43 @@ std::string_view IdentifierAST::print_token() const {
 void IdentifierAST::accept(ASTVisitor& astVistor) const {
     astVistor.visit(*this) ;
 }
+std::optional<int64_t> IdentifierAST::evaluate(EvaluationContext& evaluationContext) const {
+    return evaluationContext.getIdentifier(print_token());
+}
+
 ASTNode::Type LiteralAST::getType() const {
     return ASTNode::Type::LITERAL;
 }
 LiteralAST::LiteralAST(CodeManager* manager, CodeReference codeReference) : ExpressionAST(manager, codeReference) {
-}
-std::string_view LiteralAST::print_token() const {
-    size_t line  = codeReference.getLineRange().first ;
-    size_t begin = codeReference.getStartLineRange().first ;
-    size_t last = codeReference.getStartLineRange().second ;
-    return codeManager->getCurrentLine(line).substr(begin , last - begin + 1) ;
+     size_t line  = codeReference.getLineRange().first ;
+     size_t begin = codeReference.getStartLineRange().first ;
+     size_t last = codeReference.getStartLineRange().second ;
+     string_view token = codeManager->getCurrentLine(line).substr(begin , last - begin + 1) ;
+     value = str_to_int64(token) ;
 }
 void LiteralAST::accept(ASTVisitor& astVistor) const {
     astVistor.visit(*this) ;
 }
+std::optional<int64_t> LiteralAST::evaluate(EvaluationContext& /*evaluationContext*/) const {
+    return value ;
+}
+int64_t LiteralAST::getValue() const {
+    return value ;
+}
+LiteralAST::LiteralAST(int64_t value) : value(value){
+}
+
 size_t ASTNode::getNodeID() const{
     return node_index;
 }
 CodeReference ASTNode::getReference() const {
     return codeReference;
 }
-ASTNode::~ASTNode() {
-
+const SymbolTable& ASTNode::getSymbolTable() const {
+    return *symbolTable ;
 }
+ASTNode::~ASTNode() = default ;
+
 StatementAST::StatementAST(CodeManager* manager) {
     this->node_index = node_index_incrementer++ ;
     this->codeManager = manager ;

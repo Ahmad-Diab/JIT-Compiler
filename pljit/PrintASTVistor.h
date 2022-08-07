@@ -20,11 +20,8 @@ class PrintASTVistor final : public ASTVisitor {
     void visit(const IdentifierAST& identifierAst) override ;
     void visit(const LiteralAST& literalAst) override ;
     void reset()  ;
-    std::string getOutput() const;
-
+    std::string getOutput() ;
 };
-
-
 
 //---------------------------------------------------------------------------
 } // namespace jitcompiler

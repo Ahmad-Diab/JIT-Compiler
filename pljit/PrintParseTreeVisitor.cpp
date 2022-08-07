@@ -476,7 +476,7 @@ void PrintVisitor::visit(const Literal& /*literal*/) {
 }
 void PrintVisitor::visit(const GenericToken& /*genericToken*/) {
 }
-std::string PrintVisitor::getOutput() const {
+std::string PrintVisitor::getOutput()  {
     return buf.str() ;
 }
 void PrintVisitor::reset() {

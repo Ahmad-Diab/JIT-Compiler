@@ -1,5 +1,6 @@
 #include "AST.h"
 #include "CodeManager.h"
+#include "EvaluationContext.h"
 #include "PrintASTVistor.h"
 #include "PrintParseTreeVisitor.h"
 #include "TokenStream.h"
@@ -13,10 +14,16 @@ using namespace jitcompiler ;
 //---------------------------------------------------------------------------
 
 int main() {
-    string source_code = "PARAM width , height , depth ; \n VAR volume ; \n CONST density = 2400 ;\nBEGIN\nvolume := width * height * depth ;\nvolume := volume + 1 ;\nRETURN density * volume\nEND .";
+    string source_code = "PARAM width, height, depth;\n"
+                         "VAR volume;\n"
+                         "CONST density=2400;\n"
+                         "BEGIN\n"
+                         "volume := width * height * depth;\n"
+                         "RETURN density * volume\n"
+                         "END." ;
     CodeManager manager (source_code) ;
     TokenStream lexicalAnalyzer(&manager) ;
-    if(lexicalAnalyzer.isInitialized())
+    if(!manager.isCodeError())
     {
         while (!lexicalAnalyzer.isEmpty())
         {
@@ -29,6 +36,7 @@ int main() {
     else
     {
         cout << "lexical error" << endl ;
+        cout << manager.error_message() << endl ;
         return 1 ;
     }
     lexicalAnalyzer.reset() ;
@@ -37,22 +45,28 @@ int main() {
     {
         cout << "Syntax Analysis succeed" << "\n";
 
-//        PrintVisitor printVisitor ;
-//        parseTreeNode->accept(printVisitor);
+        PrintVisitor printVisitor ;
+        parseTreeNode->accept(printVisitor);
+        cout << "digraph {\n" ;
+        cout << printVisitor.getOutput()  ;
+        cout << "}\n" ;
+        cout << "--------------------------------\n" ;
+        cout << '\n' ;
+        FunctionAST functionAst(parseTreeNode , &manager) ;
+        PrintASTVistor  printAstVistor ;
+//        functionAst.accept(printAstVistor) ;
 //        cout << "digraph {\n" ;
-//        cout << printVisitor.getOutput()  ;
+//        cout << printAstVistor.getOutput() ;
 //        cout << "}\n" ;
+//
+        vector<int64_t> parameter_list = {3 , 1 , 2};
+        EvaluationContext evaluationContext (parameter_list , functionAst.getSymbolTable()) ;
+        cout << functionAst.evaluate(evaluationContext).value() << '\n' ;
     }
     else
     {
         cout << "Syntax Analysis failed" << "\n";
+        cout << manager.error_message() << '\n' ;
     }
-    FunctionAST functionAst(parseTreeNode , &manager) ;
-    PrintASTVistor  printAstVistor ;
-    functionAst.accept(printAstVistor) ;
-    cout << "digraph {\n" ;
-    cout << printAstVistor.getOutput() ;
-    cout << "}\n" ;
-
 }
 //---------------------------------------------------------------------------
