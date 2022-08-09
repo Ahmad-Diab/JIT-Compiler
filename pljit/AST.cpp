@@ -1,6 +1,7 @@
 #include "pljit/AST.h"
 #include "ASTVisitor.h"
 #include "pljit/EvaluationContext.h"
+#include "pljit/OptimizationASTVisitor.h"
 #include <iostream>
 #include <unordered_set>
 //---------------------------------------------------------------------------
@@ -55,8 +56,7 @@ namespace {
         return analyzeExpression(primaryExpression) ;
     }
 
-    unique_ptr<ExpressionAST> analyzeExpression(const MultiplicativeExpression& multiplicativeExpression)
-    {
+    unique_ptr<ExpressionAST> analyzeExpression(const MultiplicativeExpression& multiplicativeExpression) {
         const UnaryExpression& unaryExpression = static_cast<const UnaryExpression&>(multiplicativeExpression.getChild(0)) ;
 
         if(multiplicativeExpression.num_children() == 1)
@@ -67,12 +67,13 @@ namespace {
         const MultiplicativeExpression& anotherMultiplicativeExpression = static_cast<const MultiplicativeExpression&>(multiplicativeExpression.getChild(2)) ;
         BinaryExpressionAST::BinaryType type = op == '*' ? BinaryExpressionAST::BinaryType::MULTIPLY :
                                                            BinaryExpressionAST::BinaryType::DIVIDE;
-        unique_ptr<BinaryExpressionAST> binaryExpressionAst = make_unique<BinaryExpressionAST>(
-            codeManager ,
-            type ,
-            analyzeExpression(unaryExpression) ,
-            analyzeExpression(anotherMultiplicativeExpression)
-        );
+        unique_ptr<BinaryExpressionAST> binaryExpressionAst = make_unique<BinaryExpressionAST>
+                                                    (
+                                                        codeManager ,
+                                                        type ,
+                                                        analyzeExpression(unaryExpression) ,
+                                                        analyzeExpression(anotherMultiplicativeExpression)
+                                                    );
         return binaryExpressionAst ;
     }
     unique_ptr<ExpressionAST> analyzeExpression(const AdditiveExpression& additiveExpression)
@@ -295,6 +296,9 @@ std::optional<int64_t> FunctionAST::evaluate(EvaluationContext& evaluationContex
     }
     return nullopt ;
 }
+std::optional<int64_t> FunctionAST::acceptOptimization(OptimizationVisitor& astVisitor)  {
+    return astVisitor.visitOptimization(*this) ;
+}
 //void FunctionAST::optimize(EvaluationContext& evaluationContext, optional<int64_t>& evaluatedValue) {
 //
 //    size_t statement_size = 0 ;
@@ -354,6 +358,9 @@ void AssignmentStatementAST::accept(ASTVisitor& astVistor) const {
 std::optional<int64_t> AssignmentStatementAST::evaluate(EvaluationContext& evaluationContext) const {
     return rightExpression->evaluate(evaluationContext);
 }
+std::optional<int64_t> AssignmentStatementAST::acceptOptimization(OptimizationVisitor& astVisitor)  {
+    return astVisitor.visitOptimization(*this) ;
+}
 
 ASTNode::Type ReturnStatementAST::getType() const {
     return ASTNode::Type::RETURN_STATEMENT;
@@ -374,6 +381,9 @@ void ReturnStatementAST::accept(ASTVisitor& astVistor) const {
 }
 std::optional<int64_t> ReturnStatementAST::evaluate(EvaluationContext& evaluationContext) const {
     return input->evaluate(evaluationContext);
+}
+std::optional<int64_t> ReturnStatementAST::acceptOptimization(OptimizationVisitor& astVisitor)  {
+    return astVisitor.visitOptimization(*this) ;
 }
 
 ASTNode::Type BinaryExpressionAST::getType() const {
@@ -423,6 +433,9 @@ std::optional<int64_t> BinaryExpressionAST::evaluate(EvaluationContext& evaluati
     }
     return nullopt;
 }
+std::optional<int64_t> BinaryExpressionAST::acceptOptimization(OptimizationVisitor& astVisitor) {
+    return astVisitor.visitOptimization(*this) ;
+}
 
 ASTNode::Type UnaryExpressionAST::getType() const {
     return ASTNode::Type::UNARY_EXPRESSION;
@@ -450,6 +463,9 @@ std::optional<int64_t> UnaryExpressionAST::evaluate(EvaluationContext& evaluatio
         return -result.value() ;
     return result ;
 }
+std::optional<int64_t> UnaryExpressionAST::acceptOptimization(OptimizationVisitor& astVisitor)  {
+    return astVisitor.visitOptimization(*this) ;
+}
 
 ASTNode::Type IdentifierAST::getType() const {
     return ASTNode::Type::IDENTIFIER;
@@ -468,6 +484,9 @@ void IdentifierAST::accept(ASTVisitor& astVistor) const {
 }
 std::optional<int64_t> IdentifierAST::evaluate(EvaluationContext& evaluationContext) const {
     return evaluationContext.getIdentifier(print_token());
+}
+std::optional<int64_t> IdentifierAST::acceptOptimization(OptimizationVisitor& astVisitor) {
+    return astVisitor.visitOptimization(*this) ;
 }
 
 ASTNode::Type LiteralAST::getType() const {
@@ -491,6 +510,9 @@ int64_t LiteralAST::getValue() const {
 }
 LiteralAST::LiteralAST(int64_t value) : value(value){
 }
+std::optional<int64_t> LiteralAST::acceptOptimization(OptimizationVisitor& astVisitor) {
+    return astVisitor.visitOptimization(*this) ;
+}
 
 size_t ASTNode::getNodeID() const{
     return node_index;
@@ -503,16 +525,19 @@ const SymbolTable& ASTNode::getSymbolTable() const {
 }
 ASTNode::~ASTNode() = default ;
 
-StatementAST::StatementAST(CodeManager* manager) {
-    this->node_index = node_index_incrementer++ ;
+StatementAST::StatementAST() {
+    node_index = node_index_incrementer++ ;
+}
+StatementAST::StatementAST(CodeManager* manager) : StatementAST(){
     this->codeManager = manager ;
 }
-StatementAST::StatementAST(CodeManager* manager, CodeReference codeReference1) : StatementAST(manager)
-{
+StatementAST::StatementAST(CodeManager* manager, CodeReference codeReference1) : StatementAST(manager) {
     this->codeReference = codeReference1 ;
 }
-ExpressionAST::ExpressionAST(CodeManager* manager) {
-    this->node_index = node_index_incrementer++ ;
+ExpressionAST::ExpressionAST() {
+    node_index = node_index_incrementer++ ;
+}
+ExpressionAST::ExpressionAST(CodeManager* manager):ExpressionAST() {
     this->codeManager = manager ;
 }
 ExpressionAST::ExpressionAST(CodeManager* manager, CodeReference codeReference1) : ExpressionAST(manager){

@@ -13,6 +13,7 @@ class IdentifierAST ;
 class ExpressionAST ;
 class ASTVisitor;
 class EvaluationContext ;
+class OptimizationVisitor ;
 
 class SymbolTable {
     public:
@@ -73,6 +74,8 @@ class ASTNode {
 
     virtual void accept(ASTVisitor& astVistor) const = 0;
 
+    virtual std::optional<int64_t> acceptOptimization(OptimizationVisitor& astVisitor) = 0 ;
+
     virtual std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const = 0 ;
 
     size_t getNodeID() const ;
@@ -80,12 +83,11 @@ class ASTNode {
     CodeReference getReference() const ;
 
     const SymbolTable& getSymbolTable() const ;
-
 };
 class FunctionAST final : public ASTNode {
 
     std::vector<std::unique_ptr<StatementAST>> children ;
-
+    friend class OptimizationVisitor ;
     public:
 
     explicit FunctionAST(std::unique_ptr<FunctionDeclaration>& functionDeclaration ,CodeManager* manager) ;
@@ -100,37 +102,37 @@ class FunctionAST final : public ASTNode {
 
     void accept(ASTVisitor& astVistor) const override ;
 
+    std::optional<int64_t> acceptOptimization(OptimizationVisitor& astVisitor)  override ;
+
     std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const override ;
 
-//    void optimize(EvaluationContext& evaluationContext , std::optional<int64_t> &evaluatedValue) ;
 
 };
 class StatementAST : public ASTNode {
 
     public:
-
+    StatementAST()  ;
     explicit StatementAST(CodeManager* manager) ;
     explicit StatementAST(CodeManager* manager , CodeReference codeReference1) ;
-
-//    virtual void optimize(std::unique_ptr<StatementAST>& thisRef , EvaluationContext& evaluationContext , std::optional<int64_t> &evaluatedValue) ;
 
 };
 class ExpressionAST  : public ASTNode {
 
     public:
-    explicit ExpressionAST() = default ;
+    explicit ExpressionAST() ;
     explicit ExpressionAST(CodeManager* manager) ;
     explicit ExpressionAST(CodeManager* manager , CodeReference codeReference1) ;
-
-//    virtual void optimize(std::unique_ptr<ExpressionAST>& thisRef , EvaluationContext& evaluationContext , std::optional<int64_t> &evaluatedValue) ;
 
 };
 class ReturnStatementAST final :public StatementAST {
     std::unique_ptr<ExpressionAST> input ;
 
+    friend class OptimizationVisitor ;
     public:
     explicit ReturnStatementAST
         (CodeManager* manager  , std::unique_ptr<ExpressionAST> input) ;
+
+    explicit ReturnStatementAST (std::unique_ptr<ExpressionAST> input) : input(std::move(input)){}
 
     ASTNode::Type getType() const override;
 
@@ -142,13 +144,14 @@ class ReturnStatementAST final :public StatementAST {
 
     std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const override ;
 
-//    void optimize(std::unique_ptr<StatementAST>& thisRef , EvaluationContext& evaluationContext , std::optional<int64_t> &evaluatedValue) override;
+    std::optional<int64_t> acceptOptimization(OptimizationVisitor& astVisitor)  override ;
 
 };
 class AssignmentStatementAST final : public StatementAST {
     std::unique_ptr<IdentifierAST> leftIdentifier ;
     std::unique_ptr<ExpressionAST> rightExpression ;
 
+    friend class OptimizationVisitor ;
     public:
     explicit AssignmentStatementAST(CodeManager* manager);
 
@@ -156,6 +159,8 @@ class AssignmentStatementAST final : public StatementAST {
                                     std::unique_ptr<IdentifierAST> left ,
                                     std::unique_ptr<ExpressionAST> right
                                     );
+    explicit AssignmentStatementAST
+        (std::unique_ptr<IdentifierAST> left , std::unique_ptr<ExpressionAST> right) : leftIdentifier(std::move(left)) , rightExpression(std::move(right)) {}
 
     ASTNode::Type getType() const override;
 
@@ -171,13 +176,14 @@ class AssignmentStatementAST final : public StatementAST {
 
     std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const override ;
 
-//    void optimize(std::unique_ptr<StatementAST>& thisRef , EvaluationContext& evaluationContext , std::optional<int64_t> &evaluatedValue) override;
+    std::optional<int64_t> acceptOptimization(OptimizationVisitor& astVisitor)  override ;
 
 };
 class BinaryExpressionAST final : public ExpressionAST {
 
     std::unique_ptr<ExpressionAST> leftExpression ;
     std::unique_ptr<ExpressionAST> rightExpression ;
+    friend class OptimizationVisitor ;
     public:
     enum class BinaryType {
         PLUS ,
@@ -190,6 +196,8 @@ class BinaryExpressionAST final : public ExpressionAST {
     public:
     explicit BinaryExpressionAST
         (CodeManager* manager , BinaryType type , std::unique_ptr<ExpressionAST> left , std::unique_ptr<ExpressionAST> right) ;
+    explicit BinaryExpressionAST
+        (std::unique_ptr<ExpressionAST> left , std::unique_ptr<ExpressionAST> right) : leftExpression(move(left)) , rightExpression(move(right)) {}
 
     BinaryType getBinaryType() const ;
 
@@ -207,12 +215,13 @@ class BinaryExpressionAST final : public ExpressionAST {
 
     std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const override ;
 
-//    void optimize(std::unique_ptr<ExpressionAST>& thisRef , EvaluationContext& evaluationContext , std::optional<int64_t> &evaluatedValue) override ;
+    std::optional<int64_t> acceptOptimization(OptimizationVisitor& astVisitor)  override ;
 
 };
 class UnaryExpressionAST final : public ExpressionAST {
 
     std::unique_ptr<ExpressionAST> input ;
+    friend class OptimizationVisitor ;
     public:
     enum class UnaryType {
         PLUS ,
@@ -223,6 +232,8 @@ class UnaryExpressionAST final : public ExpressionAST {
     public:
     explicit UnaryExpressionAST
         (CodeManager* manager  , CodeReference codeReference1 , UnaryType type , std::unique_ptr<ExpressionAST> input) ;
+    explicit UnaryExpressionAST
+        (std::unique_ptr<ExpressionAST> input) : input(std::move(input)) {}
 
     UnaryType getUnaryType() const ;
 
@@ -236,7 +247,7 @@ class UnaryExpressionAST final : public ExpressionAST {
 
     std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const override ;
 
-//    void optimize(std::unique_ptr<ExpressionAST>& thisRef , EvaluationContext& evaluationContext , std::optional<int64_t> &evaluatedValue) override;
+    std::optional<int64_t> acceptOptimization(OptimizationVisitor& astVisitor)  override ;
 };
 class IdentifierAST final: public ExpressionAST {
 
@@ -252,11 +263,12 @@ class IdentifierAST final: public ExpressionAST {
 
     std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const override ;
 
-//    void optimize(std::unique_ptr<ExpressionAST>& thisRef , EvaluationContext& evaluationContext , std::optional<int64_t> &evaluatedValue) override;
+    std::optional<int64_t> acceptOptimization(OptimizationVisitor& astVisitor)  override ;
 };
 class LiteralAST final :public ExpressionAST {
 
     int64_t value ;
+    friend class OptimizationVisitor ;
     public:
     explicit LiteralAST
         (CodeManager* manager , CodeReference codeReference) ;
@@ -269,7 +281,7 @@ class LiteralAST final :public ExpressionAST {
 
     std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const override ;
 
-//    void optimize(std::unique_ptr<ExpressionAST>& thisRef , EvaluationContext& evaluationContext , std::optional<int64_t> &evaluatedValue) override;
+    std::optional<int64_t> acceptOptimization(OptimizationVisitor& astVisitor)  override ;
 };
 //---------------------------------------------------------------------------
 } // namespace jitcompiler

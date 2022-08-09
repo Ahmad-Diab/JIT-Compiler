@@ -2,14 +2,21 @@
 #include "pljit/AST.h"
 #include <cassert>
 
+using namespace std ;
 //---------------------------------------------------------------------------
 namespace jitcompiler {
 //---------------------------------------------------------------------------
-void EvaluationContext::pushParameter(std::string_view identifier, int64_t value) {
+void EvaluationContext::pushParameter(std::string_view identifier) {
     assert(parameters.find(identifier) == parameters.end()) ;
     assert(variables.find(identifier) == variables.end()) ;
     assert(constants.find(identifier) == constants.end()) ;
-    parameters[identifier] = value ;
+    parameters[identifier] = nullopt ;
+}
+void EvaluationContext::pushVariable(std::string_view identifier) {
+    assert(parameters.find(identifier) == parameters.end()) ;
+    assert(variables.find(identifier) == variables.end()) ;
+    assert(constants.find(identifier) == constants.end()) ;
+    parameters[identifier] = nullopt ;
 }
 void EvaluationContext::pushConstant(std::string_view identifier, int64_t value) {
     assert(parameters.find(identifier) == parameters.end()) ;
@@ -46,7 +53,8 @@ EvaluationContext::EvaluationContext(const std::vector<int64_t>& parameterList, 
             assert(!cur_value) ;
             assert(index < parameterList.size()) ;
             int64_t parameter_value = parameterList[index] ;
-            pushParameter(identifier , parameter_value) ;
+            pushParameter(identifier) ;
+            updateIdentifier(identifier , parameter_value) ;
         }
         else if(type == SymbolTable::AttributeType::VARIABLE)
         {
@@ -64,13 +72,21 @@ EvaluationContext::EvaluationContext(const SymbolTable& symbolTable) {
     {
         SymbolTable::AttributeType type = get<0>(e) ;
         std::optional<int64_t > cur_value = get<3>(e) ;
-        if(type == SymbolTable::AttributeType::PARAMETER ||
-            type == SymbolTable::AttributeType::VARIABLE)
+        if(type == SymbolTable::AttributeType::PARAMETER)
+        {
             assert(!cur_value) ;
+            pushParameter(identifier) ;
+        }
+        else if(type == SymbolTable::AttributeType::VARIABLE)
+        {
+            assert(!cur_value) ;
+            pushVariable(identifier) ;
+        }
         else {
             assert(cur_value) ;
             pushConstant(identifier , cur_value.value()) ;
         }
+
     }
 }
 

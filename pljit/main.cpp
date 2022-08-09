@@ -1,6 +1,7 @@
 #include "AST.h"
 #include "CodeManager.h"
 #include "EvaluationContext.h"
+#include "OptimizationASTVisitor.h"
 #include "PrintASTVistor.h"
 #include "PrintParseTreeVisitor.h"
 #include "TokenStream.h"
@@ -14,9 +15,9 @@ using namespace jitcompiler ;
 //---------------------------------------------------------------------------
 
 int main() {
-    string source_code = "PARAM width, height, depth;\n"
+    string source_code = "PARAM  d;\n"
                          "VAR volume;\n"
-                         "CONST density=2400;\n"
+                         "CONST density=2400,width=21,height=3,depth=2;\n"
                          "BEGIN\n"
                          "volume := width * height * depth;\n"
                          "RETURN density * volume\n"
@@ -53,15 +54,20 @@ int main() {
         cout << "--------------------------------\n" ;
         cout << '\n' ;
         FunctionAST functionAst(parseTreeNode , &manager) ;
-        PrintASTVistor  printAstVistor ;
-//        functionAst.accept(printAstVistor) ;
-//        cout << "digraph {\n" ;
-//        cout << printAstVistor.getOutput() ;
-//        cout << "}\n" ;
 //
-        vector<int64_t> parameter_list = {3 , 1 , 2};
-        EvaluationContext evaluationContext (parameter_list , functionAst.getSymbolTable()) ;
+
+//        vector<int64_t> parameter_list = {3 , 1 , 2};
+        EvaluationContext evaluationContext (functionAst.getSymbolTable()) ;
+        OptimizationVisitor optimizationVisitor(evaluationContext) ;
+        optimizationVisitor.visitOptimization(functionAst) ;
+        PrintASTVistor  printAstVistor ;
+        functionAst.accept(printAstVistor) ;
+        cout << "digraph {\n" ;
+        cout << printAstVistor.getOutput() ;
+        cout << "}\n" ;
+        cout << "--------------------------------\n" ;
         cout << functionAst.evaluate(evaluationContext).value() << '\n' ;
+//
     }
     else
     {

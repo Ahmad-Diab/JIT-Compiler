@@ -1,23 +1,37 @@
 #ifndef PLJIT_OPTIMIZATIONASTVISITOR_H
 #define PLJIT_OPTIMIZATIONASTVISITOR_H
 
-#include "ASTVisitor.h"
+#include "pljit/EvaluationContext.h"
+#include <cstdint>
+#include <optional>
 
 //---------------------------------------------------------------------------
 namespace jitcompiler {
 //---------------------------------------------------------------------------
 
-class OptimizationASTVisitor final : public ASTVisitor{
+class FunctionAST ;
+class ReturnStatementAST ;
+class AssignmentStatementAST ;
+class BinaryExpressionAST ;
+class UnaryExpressionAST ;
+class IdentifierAST ;
+class LiteralAST ;
+
+class OptimizationVisitor {
+
+    EvaluationContext evaluationContext ;
 
     public:
-    void visit(const FunctionAST& functionAst) override ;
-    void visit(const ReturnStatementAST& returnStatementAst) override ;
-    void visit(const AssignmentStatementAST& assignmentStatementAst) override ;
-    void visit(const BinaryExpressionAST& binaryExpressionAst) override ;
-    void visit(const UnaryExpressionAST& unaryExpressionAst) override ;
-    void visit(const IdentifierAST& identifierAst) override ;
-    void visit(const LiteralAST& literalAst) override ;
+    OptimizationVisitor() = default;
+    explicit OptimizationVisitor(EvaluationContext &evaluationContext) : evaluationContext(evaluationContext) {}
 
+    std::optional<int64_t> visitOptimization(FunctionAST& functionAst) ;
+    std::optional<int64_t> visitOptimization(ReturnStatementAST& returnStatementAst)  ;
+    std::optional<int64_t> visitOptimization(AssignmentStatementAST& assignmentStatementAst)  ;
+    std::optional<int64_t> visitOptimization(BinaryExpressionAST& binaryExpressionAst)  ;
+    std::optional<int64_t> visitOptimization(UnaryExpressionAST& unaryExpressionAst)  ;
+    std::optional<int64_t> visitOptimization(IdentifierAST& identifierAst)  ;
+    std::optional<int64_t> visitOptimization(LiteralAST& literalAst)  ;
 
 };
 //---------------------------------------------------------------------------
