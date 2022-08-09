@@ -5,6 +5,7 @@
 #include "pljit/ParseTree.h"
 #include <cassert>
 #include <unordered_map>
+#include <optional>
 
 namespace jitcompiler {
 //---------------------------------------------------------------------------
