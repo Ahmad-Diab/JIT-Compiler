@@ -1,7 +1,7 @@
 set(PLJIT_SOURCES
     # add your source files here
+        CodeManager.cpp TokenStream.cpp ParseTree.cpp CodeReference.cpp AST.cpp PrintParseTreeVisitor.cpp ASTVisitor.h PrintASTVistor.cpp  OptimizationASTVisitor.cpp EvaluationContext.cpp)
 
-        CodeManager.cpp TokenStream.cpp ParseTree.cpp CodeReference.cpp AST.cpp PrintParseTreeVisitor.cpp ASTVisitor.h PrintASTVistor.cpp PrintASTVistor.h OptimizationASTVisitor.cpp OptimizationASTVisitor.h EvaluationContext.cpp EvaluationContext.h Pljit.h)
 
 add_library(pljit_core ${PLJIT_SOURCES})
 target_include_directories(pljit_core PUBLIC ${CMAKE_SOURCE_DIR})
