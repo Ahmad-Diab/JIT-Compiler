@@ -26,8 +26,12 @@ class SymbolTable {
     private:
     bool isCompiled = true ;
     // value-> get<0>(e) = attribute_type , get<1>(e) = code_ref , get<2>(e) = index in declaration list , get<3>(e) = value (for const declaration only)
-    std::unordered_map<std::string_view , std::tuple<AttributeType , CodeReference , size_t , std::optional<int64_t>>>
-        tableIdentifiers ;
+//    std::unordered_map<std::string_view , std::tuple<AttributeType , CodeReference , size_t , std::optional<int64_t>>>
+//        tableIdentifiers ;
+    std::array<
+        std::unordered_map<std::string_view , std::tuple<CodeReference , size_t , std::optional<int64_t>>>
+        ,3>
+        tableIdentifier ;
 
     bool addAttributes(const ParameterDeclaration& declaration) ;
     bool addAttributes(const VariableDeclaration& declaration) ;
@@ -44,7 +48,7 @@ class SymbolTable {
 
     bool isComplied() const ;
 
-    const std::unordered_map<std::string_view , std::tuple<AttributeType , CodeReference , size_t , std::optional<int64_t>>> & getTableContent() const ;
+    std::array<std::unordered_map<std::string_view , std::tuple<CodeReference , size_t , std::optional<int64_t>>> , 3> & getTableContent()  ;
 
 };
 
@@ -83,7 +87,7 @@ class ASTNode {
 
     CodeReference getReference() const ;
 
-    const SymbolTable& getSymbolTable() const ;
+    SymbolTable& getSymbolTable()  ;
 };
 class FunctionAST final : public ASTNode {
 

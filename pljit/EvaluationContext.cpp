@@ -1,6 +1,7 @@
 #include "pljit/EvaluationContext.h"
 #include "pljit/AST.h"
 #include <cassert>
+#include <iostream>
 
 using namespace std ;
 //---------------------------------------------------------------------------
@@ -42,52 +43,48 @@ std::optional<int64_t> EvaluationContext::getIdentifier(std::string_view identif
         return constants[identifier] ;
     return std::nullopt;
 }
-EvaluationContext::EvaluationContext(const std::vector<int64_t>& parameterList, const SymbolTable& symbolTable) {
-    for(auto &[identifier , e] : symbolTable.getTableContent())
-    {
-        SymbolTable::AttributeType type = get<0>(e) ;
-        size_t index = get<2>(e) ;
-        std::optional<int64_t > cur_value = get<3>(e) ;
-        if(type == SymbolTable::AttributeType::PARAMETER)
+EvaluationContext::EvaluationContext(std::vector<int64_t>& parameterList, SymbolTable& symbolTable) :symbolTable(&symbolTable){
+    constexpr size_t PARAMETER = 0 , VARIABLE = 1 , CONSTANT = 2 ;
+    for(size_t type = 0 ; type < 3 ; ++type)
+        for(auto &[identifier , e] : symbolTable.getTableContent()[type])
         {
-            assert(!cur_value) ;
-            assert(index < parameterList.size()) ;
-            int64_t parameter_value = parameterList[index] ;
-            pushParameter(identifier) ;
-            updateIdentifier(identifier , parameter_value) ;
+            size_t index = get<1>(e) ;
+            std::optional<int64_t > cur_value = get<2>(e) ;
+            if(type == PARAMETER)
+            {
+                assert(index < parameterList.size()) ;
+                int64_t parameter_value = parameterList[index] ;
+                pushParameter(identifier) ;
+                updateIdentifier(identifier , parameter_value) ;
+            }
+            else if(type == VARIABLE)
+            {
+                assert(!cur_value) ;
+                variables[identifier] ;
+            }
+            else if(type == CONSTANT) {
+                assert(cur_value) ;
+                pushConstant(identifier , cur_value.value()) ;
+            }
         }
-        else if(type == SymbolTable::AttributeType::VARIABLE)
-        {
-            assert(!cur_value) ;
-            variables[identifier] ;
-        }
-        else {
-            assert(cur_value) ;
-            pushConstant(identifier , cur_value.value()) ;
-        }
-    }
 }
-EvaluationContext::EvaluationContext(const SymbolTable& symbolTable) {
-    for(auto &[identifier , e] : symbolTable.getTableContent())
-    {
-        SymbolTable::AttributeType type = get<0>(e) ;
-        std::optional<int64_t > cur_value = get<3>(e) ;
-        if(type == SymbolTable::AttributeType::PARAMETER)
-        {
-            assert(!cur_value) ;
-            pushParameter(identifier) ;
-        }
-        else if(type == SymbolTable::AttributeType::VARIABLE)
-        {
-            assert(!cur_value) ;
-            pushVariable(identifier) ;
-        }
-        else {
-            assert(cur_value) ;
-            pushConstant(identifier , cur_value.value()) ;
-        }
+EvaluationContext::EvaluationContext(SymbolTable& symbolTable) {
+    this->symbolTable = &symbolTable ;
+    for(size_t type = 0 ; type < 3 ; ++type)
+        for(auto &[identifier , e] : symbolTable.getTableContent()[type]){
+            std::optional<int64_t > cur_value = get<2>(e) ;
+            if(type == SymbolTable::AttributeType::PARAMETER) {
+                pushParameter(identifier) ;
+            }
+            else if(type == SymbolTable::AttributeType::VARIABLE) {
+                pushVariable(identifier) ;
+            }
+            else {
+                assert(cur_value) ;
+                pushConstant(identifier , cur_value.value()) ;
+            }
 
-    }
+        }
 }
 
 //---------------------------------------------------------------------------

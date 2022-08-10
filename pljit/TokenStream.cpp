@@ -72,6 +72,8 @@ namespace jitcompiler {
 //---------------------------------------------------------------------------
 TokenStream::TokenStream(CodeManager* currentManager) : manager(currentManager)  {
 
+}
+void TokenStream::compileCode() {
     for(size_t line_index = 0 , num_lines = manager->countLines(); line_index < num_lines ; line_index++) {
         string_view currentLine = manager->getCurrentLine(line_index) ;
         for(size_t begin_index = 0 , line_size = currentLine.size() ; begin_index < line_size ; ++begin_index) {
@@ -128,6 +130,7 @@ TokenStream::TokenStream(CodeManager* currentManager) : manager(currentManager) 
             }
         }
     }
+
 }
 void TokenStream::popNextToken() {
     iterator_token++ ;

@@ -207,21 +207,23 @@ SymbolTable::SymbolTable(const FunctionDeclaration& functionDeclaration) {
     }
 }
 bool SymbolTable::isDeclared(std::string_view identifier) const {
-    return tableIdentifiers.find(identifier) != tableIdentifiers.end() ;
+    return tableIdentifier[PARAMETER].find(identifier) != tableIdentifier[PARAMETER].end()
+            || tableIdentifier[VARIABLE].find(identifier) != tableIdentifier[VARIABLE].end()
+            || tableIdentifier[CONSTANT].find(identifier) != tableIdentifier[CONSTANT].end() ;
 }
 
 bool SymbolTable::isConstant(std::string_view identifier)  {
-    return  get<0>(tableIdentifiers[identifier]) == AttributeType::CONSTANT;
+    return  tableIdentifier[CONSTANT].find(identifier) != tableIdentifier[CONSTANT].end() ;
 }
 bool SymbolTable::isComplied() const {
     return isCompiled ;
 }
 void SymbolTable::insert(std::string_view identifier , AttributeType type ,CodeReference codeReference , size_t index , std::optional<int64_t> value) {
     assert(!isDeclared(identifier)) ;
-    tableIdentifiers[identifier] = make_tuple(type , codeReference , index , value) ;
+    tableIdentifier[type][identifier] = make_tuple(codeReference , index , value) ;
 }
-const unordered_map<std::string_view, std::tuple<SymbolTable::AttributeType, CodeReference, size_t, std::optional<int64_t>>>& SymbolTable::getTableContent() const {
-    return tableIdentifiers ;
+array<unordered_map<std::string_view, std::tuple<CodeReference, size_t, std::optional<int64_t>>> , 3>& SymbolTable::getTableContent() {
+    return tableIdentifier ;
 }
 
 //---------------------------------------------------------------------------
@@ -288,7 +290,7 @@ std::optional<int64_t> FunctionAST::evaluate(EvaluationContext& evaluationContex
             const AssignmentStatementAST& curr = static_cast<const AssignmentStatementAST&>(*statementAst.get()) ;
             string_view identifier = curr.getLeftIdentifier().print_token() ;
             optional<int64_t> result = statementAst->evaluate(evaluationContext) ;
-            if(result)
+            if(result.has_value())
                 evaluationContext.updateIdentifier(identifier , result.value());
             else
                 return nullopt ;
@@ -419,7 +421,7 @@ std::optional<int64_t> BinaryExpressionAST::evaluate(EvaluationContext& evaluati
 
     optional<int64_t> leftResult = leftExpression->evaluate(evaluationContext) ;
     optional<int64_t> rightResult = rightExpression->evaluate(evaluationContext) ;
-    if(!leftResult || !rightResult)
+    if(!leftResult.has_value() || !rightResult.has_value())
         return nullopt ;
     switch (getBinaryType()) {
         case BinaryType::PLUS: return leftResult.value() + rightResult.value();
@@ -459,6 +461,8 @@ void UnaryExpressionAST::accept(ASTVisitor& astVistor) const {
 }
 std::optional<int64_t> UnaryExpressionAST::evaluate(EvaluationContext& evaluationContext) const {
     optional<int64_t> result = input->evaluate(evaluationContext) ;
+    if(!result.has_value())
+        return nullopt ;
     if(getUnaryType() == UnaryType::MINUS)
         return -result.value() ;
     return result ;
@@ -520,7 +524,7 @@ size_t ASTNode::getNodeID() const{
 CodeReference ASTNode::getReference() const {
     return codeReference;
 }
-const SymbolTable& ASTNode::getSymbolTable() const {
+SymbolTable& ASTNode::getSymbolTable()  {
     return *symbolTable ;
 }
 ASTNode::~ASTNode() = default ;

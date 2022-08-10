@@ -40,6 +40,8 @@ public:
 
     bool isEmpty() const ;
 
+    void compileCode()  ;
+
     // TODO remove method ;
     void reset() {
         iterator_token = 0 ;

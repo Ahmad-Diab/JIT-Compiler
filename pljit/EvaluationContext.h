@@ -12,6 +12,8 @@ namespace jitcompiler {
 class SymbolTable ;
 
 class EvaluationContext {
+
+    SymbolTable* symbolTable;
     std::unordered_map<std::string_view , std::optional<int64_t>> parameters ;
     std::unordered_map<std::string_view , std::optional<int64_t>> variables ;
     std::unordered_map<std::string_view , std::optional<int64_t>> constants ;
@@ -21,9 +23,9 @@ class EvaluationContext {
     void pushConstant(std::string_view identifier , int64_t value) ;
 
     public:
-    explicit EvaluationContext(const std::vector<int64_t >& parameterList , const SymbolTable & symbolTable) ;
-    explicit EvaluationContext(const SymbolTable & symbolTable) ;
     explicit EvaluationContext() = default ;
+    explicit EvaluationContext(SymbolTable & symbolTable) ;
+    explicit EvaluationContext(std::vector<int64_t >& parameterList , SymbolTable & symbolTable) ;
 
     void updateIdentifier(std::string_view identifier, int64_t value) ;
 
