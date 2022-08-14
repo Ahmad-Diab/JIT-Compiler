@@ -21,7 +21,7 @@ CodeManager* ParseTreeNode::getManager() const {
     return codeManager ;
 }
 std::string ParseTreeNode::print_dot() const {
-    PrintVisitor printVisitor ;
+    PrintVisitor<true> printVisitor ;
     this->accept(printVisitor) ;
     std::string result = "digraph {\n" +  printVisitor.getOutput() + "}\n";
     return result ;
@@ -712,11 +712,10 @@ bool UnaryExpression::recursiveDecentParser(TokenStream& tokenStream) {
             children.emplace_back(move(genericToken));
             tokenStream.nextToken();
         }
-        unique_ptr<PrimaryExpression> primaryExpression = make_unique<PrimaryExpression>(codeManager ) ;
+        unique_ptr<PrimaryExpression> primaryExpression = make_unique<PrimaryExpression>(codeManager) ;
         if(primaryExpression->recursiveDecentParser(tokenStream))
             children.emplace_back(move(primaryExpression)) ;
         else {
-             // TODO error handling ;
             return false ;
         }
     }
@@ -732,14 +731,12 @@ ParseTreeNode::Type PrimaryExpression::getType() const {
 PrimaryExpression::PrimaryExpression(CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool PrimaryExpression::recursiveDecentParser(TokenStream& tokenStream) {
-    if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::IDENTIFIER)
-    {
+    if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::IDENTIFIER) {
         unique_ptr<Identifier> identifier = make_unique<Identifier>(codeManager ) ;
         if(identifier->recursiveDecentParser(tokenStream))
             children.emplace_back(move(identifier)) ;
         else
         {
-             // TODO error handling ;
             return false ;
         }
     }
@@ -749,7 +746,6 @@ bool PrimaryExpression::recursiveDecentParser(TokenStream& tokenStream) {
         if(literal->recursiveDecentParser(tokenStream))
             children.emplace_back(move(literal)) ;
         else {
-             // TODO error handling ;
             return false ;
         }
     }

@@ -264,7 +264,7 @@ class UnaryExpression final : public NonTerminalNode {
 class PrimaryExpression final : public NonTerminalNode {
     public:
 
-    explicit PrimaryExpression(CodeManager* manager ) ;
+    explicit PrimaryExpression(CodeManager* manager) ;
 
     Type getType() const override ;
 

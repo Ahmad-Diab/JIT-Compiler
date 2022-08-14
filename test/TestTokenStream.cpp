@@ -53,7 +53,7 @@ TEST(TestTokenStream , singleToken) {
         ASSERT_EQ(line.substr(start_index , last_index - start_index + 1) , cur) ;
         ASSERT_EQ(type , token.getTokenType()) ;
     }
-    // identifers
+    // identifiers
     for(const auto &cur : identifiers) {
         CodeManager codeManager(cur) ;
         TokenStream lexicalAnalyzer(&codeManager) ;
