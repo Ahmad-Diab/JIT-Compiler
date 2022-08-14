@@ -1,7 +1,7 @@
-#ifndef PLJIT_OPTIMIZATIONASTVISITOR_H
-#define PLJIT_OPTIMIZATIONASTVISITOR_H
+#ifndef PLJIT_OPTIMIZATIONASTVISITOR_HPP
+#define PLJIT_OPTIMIZATIONASTVISITOR_HPP
 
-#include "pljit/EvaluationContext.h"
+#include "pljit/EvaluationContext.hpp"
 #include <cstdint>
 #include <optional>
 
@@ -37,4 +37,4 @@ class OptimizationVisitor {
 //---------------------------------------------------------------------------
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
-#endif //PLJIT_OPTIMIZATIONASTVISITOR_H
+#endif //PLJIT_OPTIMIZATIONASTVISITOR_HPP

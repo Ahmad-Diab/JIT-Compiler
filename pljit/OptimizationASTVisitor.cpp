@@ -1,6 +1,6 @@
-#include "OptimizationASTVisitor.h"
-#include "pljit/AST.h"
-#include "pljit/EvaluationContext.h"
+#include "OptimizationASTVisitor.hpp"
+#include "pljit/AST.hpp"
+#include "pljit/EvaluationContext.hpp"
 //---------------------------------------------------------------------------
 using namespace std ;
 //---------------------------------------------------------------------------

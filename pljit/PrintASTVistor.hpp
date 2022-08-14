@@ -1,7 +1,7 @@
-#ifndef PLJIT_PRINTASTVISTOR_H
-#define PLJIT_PRINTASTVISTOR_H
+#ifndef PLJIT_PRINTASTVISTOR_HPP
+#define PLJIT_PRINTASTVISTOR_HPP
 
-#include "ASTVisitor.h"
+#include "ASTVisitor.hpp"
 #include <sstream>
 
 //---------------------------------------------------------------------------
@@ -27,4 +27,4 @@ class PrintASTVistor final : public ASTVisitor {
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
 
-#endif //PLJIT_PRINTASTVISTOR_H
+#endif //PLJIT_PRINTASTVISTOR_HPP

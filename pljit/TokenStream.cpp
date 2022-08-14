@@ -1,4 +1,4 @@
-#include "TokenStream.h"
+#include "TokenStream.hpp"
 #include <array>
 #include <cassert>
 #include <cctype>
@@ -22,31 +22,23 @@ namespace {
 
     bool isValidChar(char c) { return isDigit(c) || isLetter(c) || isValidSpecialChar(c) ; }
 
-    bool isKeyword(string_view token)
-    {
+    bool isKeyword(string_view token) {
         constexpr array<string_view , 6> keywords = {"PARAM" , "VAR" , "CONST" , "BEGIN" , "END" , "RETURN"} ;
         for(const auto& cur : keywords)
             if(cur == token)
                 return true ;
         return false ;
     }
-    bool isIdentifer(string_view token)
-    {
+    bool isIdentifer(string_view token) {
         for(char c : token)
             if(!isLetter(c))
                 return false ;
         return true ;
     }
 
-    bool isLiteral(string_view token)
-    {
-        size_t index = 0 ;
-        while (index < token.size() && (token[index] == '+' || token[index] == '-'))
-            index ++ ;
-        if(index == token.size())
-            return false ;
-        for( ;index < token.size() ; index ++)
-            if(!isDigit(token[index]))
+    bool isLiteral(string_view token) {
+        for(char t : token)
+            if(!isDigit(t))
                 return false ;
         return true ;
     }
@@ -85,31 +77,32 @@ void TokenStream::compileCode() {
                 std::optional<size_t> next_index = getNextIndex(currentLine , begin_index , end_index) ;
                 if(next_index) {
                     size_t current_index = next_index.value() ;
+                    CodeReference codeReference({line_index , begin_index} , {line_index , current_index - 1}) ;
                     string_view currentToken = currentLine.substr(begin_index , current_index - begin_index) ;
                     assert(!currentToken.empty());
                     if(isKeyword(currentToken))
-                        streamTokens.emplace_back(line_index , begin_index , current_index - 1 , TokenType::KEYWORD) ;
+                        streamTokens.emplace_back(codeReference , TokenType::KEYWORD) ;
                     else if(isIdentifer(currentToken))
-                        streamTokens.emplace_back(line_index , begin_index , current_index - 1 , TokenType::IDENTIFIER) ;
+                        streamTokens.emplace_back(codeReference , TokenType::IDENTIFIER) ;
                     else if(isLiteral(currentToken))
-                        streamTokens.emplace_back(line_index , begin_index , current_index - 1 , TokenType::LITERAL) ;
+                        streamTokens.emplace_back(codeReference, TokenType::LITERAL) ;
                     else if(isValidSpecialChar(currentToken[0])) {
                         if(currentToken == ":=")
-                            streamTokens.emplace_back(line_index , begin_index , current_index - 1 , TokenType::VAR_ASSIGNMENT) ;
+                            streamTokens.emplace_back(codeReference, TokenType::VAR_ASSIGNMENT) ;
                         else {
                             switch (currentToken[0]) {
-                                case ',': streamTokens.emplace_back(line_index, begin_index, current_index - 1, TokenType::COMMA_SEPARATOR); break;
-                                case '.': streamTokens.emplace_back(line_index, begin_index, current_index - 1, TokenType::TERMINATOR); break;
-                                case ';': streamTokens.emplace_back(line_index, begin_index, current_index - 1, TokenType::SEMI_COLON_SEPARATOR); break;
-                                case '=': streamTokens.emplace_back(line_index, begin_index, current_index - 1, TokenType::CONST_ASSIGNMENT); break;
-                                case '+': streamTokens.emplace_back(line_index, begin_index, current_index - 1, TokenType::PLUS_OPERATOR); break;
-                                case '-': streamTokens.emplace_back(line_index, begin_index, current_index - 1, TokenType::MINUS_OPERATOR); break;
-                                case '*': streamTokens.emplace_back(line_index, begin_index, current_index - 1, TokenType::MULTIPLY_OPERATOR);break;
-                                case '/': streamTokens.emplace_back(line_index, begin_index, current_index - 1, TokenType::DIVIDE_OPERATOR); break;
-                                case '(': streamTokens.emplace_back(line_index, begin_index, current_index - 1, TokenType::OPEN_BRACKET); break;
-                                case ')':  streamTokens.emplace_back(line_index, begin_index, current_index - 1, TokenType::CLOSE_BRACKET); break;
+                                case ',': streamTokens.emplace_back(codeReference, TokenType::COMMA_SEPARATOR); break;
+                                case '.': streamTokens.emplace_back(codeReference, TokenType::TERMINATOR); break;
+                                case ';': streamTokens.emplace_back(codeReference, TokenType::SEMI_COLON_SEPARATOR); break;
+                                case '=': streamTokens.emplace_back(codeReference, TokenType::CONST_ASSIGNMENT); break;
+                                case '+': streamTokens.emplace_back(codeReference, TokenType::PLUS_OPERATOR); break;
+                                case '-': streamTokens.emplace_back(codeReference, TokenType::MINUS_OPERATOR); break;
+                                case '*': streamTokens.emplace_back(codeReference, TokenType::MULTIPLY_OPERATOR);break;
+                                case '/': streamTokens.emplace_back(codeReference, TokenType::DIVIDE_OPERATOR); break;
+                                case '(': streamTokens.emplace_back(codeReference, TokenType::OPEN_BRACKET); break;
+                                case ')':  streamTokens.emplace_back(codeReference, TokenType::CLOSE_BRACKET); break;
                                 default: {
-                                    manager->printCompileError(line_index, begin_index, current_index - 1); // error type -> unexpected token
+                                    manager->printTokenFailure(codeReference); // error type -> unexpected token
                                     return;
                                 }
                             }
@@ -117,14 +110,14 @@ void TokenStream::compileCode() {
                     }
                     else
                     {
-                        manager->printCompileError(line_index , begin_index , current_index - 1); // error type -> unexpected token
+                        manager->printTokenFailure(codeReference); // error type -> unexpected token
                         return ;
                     }
 
                     begin_index = current_index;
                 }
                 else {
-                    manager->printCompileError(line_index , begin_index , begin_index) ;
+                    manager->printTokenFailure({{line_index , begin_index} , {line_index , begin_index}}) ;
                     return  ;
                 }
             }
@@ -132,14 +125,25 @@ void TokenStream::compileCode() {
     }
 
 }
-void TokenStream::popNextToken() {
+TokenStream::Token TokenStream::nextToken() {
+    Token token = lookup()  ;
     iterator_token++ ;
+    return token ;
 }
-TokenStream::Token TokenStream::getNextToken() const {
+TokenStream::Token TokenStream::lookup() const {
     return streamTokens[iterator_token] ;
 }
 bool TokenStream::isEmpty() const {
     return iterator_token == streamTokens.size() ;
+}
+void TokenStream::reset() {
+    this->iterator_token = 0 ;
+}
+CodeReference& TokenStream::Token::getCodeReference() {
+    return codeReference;
+}
+TokenStream::TokenType TokenStream::Token::getTokenType() const {
+    return type ;
 }
 
 //---------------------------------------------------------------------------

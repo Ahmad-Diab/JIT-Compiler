@@ -1,10 +1,10 @@
-#ifndef PLJIT_PLJIT_H
-#define PLJIT_PLJIT_H
+#ifndef PLJIT_PLJIT_HPP
+#define PLJIT_PLJIT_HPP
 
 //---------------------------------------------------------------------------
-#include "AST.h"
-#include "ParseTree.h"
-#include "TokenStream.h"
+#include "AST.hpp"
+#include "ParseTree.hpp"
+#include "TokenStream.hpp"
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -37,6 +37,7 @@ class Pljit {
         return [& , index](std::vector<int64_t>& parameter_list) -> std::optional<int64_t> {
             const size_t curIndex = index ;
             if(!compileTrigger[curIndex].has_value()) {
+                std::cout << "compile" << '\n';
                 CodeManager* manager = codeManagement[curIndex].get() ;
                 lexicalAnalyzer[curIndex] = std::make_unique<TokenStream>(manager);
                 lexicalAnalyzer[curIndex]->compileCode() ;
@@ -45,9 +46,9 @@ class Pljit {
                     std::cout << manager->error_message() << '\n';
                     return std::nullopt ;
                 }
-                TokenStream* tokenStream = lexicalAnalyzer[curIndex].get() ;
-                syntaxAnalyzer[curIndex] = std::make_unique<FunctionDeclaration>(manager , tokenStream) ;
-                if(!syntaxAnalyzer[curIndex]->recursiveDecentParser()) {
+                auto& tokenStream = lexicalAnalyzer[curIndex] ;
+                syntaxAnalyzer[curIndex] = std::make_unique<FunctionDeclaration>(manager) ;
+                if(!syntaxAnalyzer[curIndex]->recursiveDecentParser(*tokenStream)) {
                     compileTrigger[curIndex] = false ;
                     std::cout << manager->error_message() << '\n';
                     return std::nullopt ;
@@ -70,6 +71,7 @@ class Pljit {
                 return result ;
             }
             else if(compileTrigger[curIndex].value()) {
+
                 EvaluationContext evaluationContext(parameter_list , semanticAnalyzer[curIndex]->getSymbolTable()) ;
                 std::optional<int64_t> result = semanticAnalyzer[curIndex]->evaluate(evaluationContext) ;
                 // TODO runtime error divide by zero.
@@ -88,4 +90,4 @@ class Pljit {
 //---------------------------------------------------------------------------
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
-#endif //PLJIT_PLJIT_H
+#endif //PLJIT_PLJIT_HPP

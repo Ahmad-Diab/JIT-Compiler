@@ -1,10 +1,9 @@
-#ifndef PLJIT_PARSETREE_H
-#define PLJIT_PARSETREE_H
+#ifndef PLJIT_PARSETREE_HPP
+#define PLJIT_PARSETREE_HPP
 
 //---------------------------------------------------------------------------
-#include "CodeReference.h"
-#include "PrintParseTreeVisitor.h"
-#include "TokenStream.h"
+#include "CodeReference.hpp"
+#include "TokenStream.hpp"
 #include <memory>
 namespace jitcompiler {
 //---------------------------------------------------------------------------
@@ -17,12 +16,10 @@ class ParseTreeNode {
     //---------------------------------------------------------------------------
      CodeReference codeReference ; // TODO supposed to be in Terminal node only
      CodeManager* codeManager ;
-     TokenStream* tokenStream ;
+//     TokenStream* tokenStream ;
      //---------------------------------------------------------------------------
 
-     bool isCompileError ;
      size_t node_index ;
-
      static size_t node_index_incrementer ;
 public:
     /// Types of ParseTreeNodes
@@ -55,9 +52,8 @@ public:
     // pure virtual function for type of current subclass
     virtual Type getType() const = 0 ;
 
-    virtual bool recursiveDecentParser() = 0 ;
+    virtual bool recursiveDecentParser(TokenStream& tokenStream) = 0 ;
 
-    bool isInitialized() const ;
 
     virtual void accept(ParseTreeVisitor& parseTreeVisitor) const  = 0 ;
 
@@ -67,17 +63,12 @@ public:
 
     CodeManager* getManager() const ;
 
-    std::string print_dot() {
-        PrintVisitor printVisitor ;
-        this->accept(printVisitor) ;
-        std::string result = "digraph {\n" +  printVisitor.getOutput() + "}\n";
-        return result ;
-    }
+    std::string print_dot() const ;
 };
 class TerminalNode : public ParseTreeNode {
 
     public:
-    explicit TerminalNode(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit TerminalNode(CodeManager* manager) ;
     explicit TerminalNode(CodeManager* manager , CodeReference codeReference) ;
 
     std::string_view print_token() const;
@@ -88,7 +79,7 @@ class NonTerminalNode : public ParseTreeNode {
 
     public:
 
-    explicit NonTerminalNode(CodeManager* manager , TokenStream* tokenStream)  ;
+    explicit NonTerminalNode(CodeManager* manager)  ;
 
     const ParseTreeNode & getChild(const size_t index) const;
 
@@ -101,11 +92,11 @@ class NonTerminalNode : public ParseTreeNode {
 class FunctionDeclaration final : public NonTerminalNode {
     public:
 
-    explicit FunctionDeclaration(CodeManager* manager , TokenStream* tokenStream)  ;
+    explicit FunctionDeclaration(CodeManager* manager)  ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -113,11 +104,11 @@ class FunctionDeclaration final : public NonTerminalNode {
 class ParameterDeclaration final : public NonTerminalNode {
     public:
 
-    explicit ParameterDeclaration(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit ParameterDeclaration(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -125,11 +116,11 @@ class ParameterDeclaration final : public NonTerminalNode {
 class VariableDeclaration final : public NonTerminalNode {
     public:
 
-    explicit VariableDeclaration(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit VariableDeclaration(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -137,11 +128,11 @@ class VariableDeclaration final : public NonTerminalNode {
 class ConstantDeclaration final : public NonTerminalNode {
     public:
 
-    explicit ConstantDeclaration(CodeManager* manager , TokenStream* tokenStream)   ;
+    explicit ConstantDeclaration(CodeManager* manager )   ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 
@@ -150,11 +141,11 @@ class ConstantDeclaration final : public NonTerminalNode {
 class DeclartorList final : public NonTerminalNode {
     public:
 
-    explicit DeclartorList(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit DeclartorList(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -162,11 +153,11 @@ class DeclartorList final : public NonTerminalNode {
 class InitDeclartorList final : public NonTerminalNode {
     public:
 
-    explicit InitDeclartorList(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit InitDeclartorList(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 
@@ -175,11 +166,11 @@ class InitDeclartorList final : public NonTerminalNode {
 class InitDeclartor final : public NonTerminalNode {
     public:
 
-    explicit InitDeclartor(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit InitDeclartor(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 
@@ -188,11 +179,11 @@ class InitDeclartor final : public NonTerminalNode {
 class CompoundStatement final : public NonTerminalNode {
     public:
 
-    explicit CompoundStatement(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit CompoundStatement(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 
@@ -201,11 +192,11 @@ class CompoundStatement final : public NonTerminalNode {
 class StatementList final : public NonTerminalNode {
     public:
 
-    explicit StatementList(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit StatementList(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -213,11 +204,11 @@ class StatementList final : public NonTerminalNode {
 class Statement final : public NonTerminalNode {
     public:
 
-    explicit Statement(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit Statement(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -225,11 +216,11 @@ class Statement final : public NonTerminalNode {
 class AssignmentExpression final : public NonTerminalNode {
     public:
 
-    explicit AssignmentExpression(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit AssignmentExpression(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -237,11 +228,11 @@ class AssignmentExpression final : public NonTerminalNode {
 class AdditiveExpression final : public NonTerminalNode {
     public:
 
-    explicit AdditiveExpression(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit AdditiveExpression(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -249,11 +240,11 @@ class AdditiveExpression final : public NonTerminalNode {
 class MultiplicativeExpression final : public NonTerminalNode {
     public:
 
-    explicit MultiplicativeExpression(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit MultiplicativeExpression(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -261,11 +252,11 @@ class MultiplicativeExpression final : public NonTerminalNode {
 class UnaryExpression final : public NonTerminalNode {
     public:
 
-    explicit UnaryExpression(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit UnaryExpression(CodeManager* manager ) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -273,11 +264,11 @@ class UnaryExpression final : public NonTerminalNode {
 class PrimaryExpression final : public NonTerminalNode {
     public:
 
-    explicit PrimaryExpression(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit PrimaryExpression(CodeManager* manager ) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -285,11 +276,11 @@ class PrimaryExpression final : public NonTerminalNode {
 class Identifier final : public TerminalNode {
     public:
 
-    explicit Identifier(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit Identifier(CodeManager* manager ) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -297,11 +288,11 @@ class Identifier final : public TerminalNode {
 class Literal final : public TerminalNode {
     public:
 
-    explicit Literal(CodeManager* manager , TokenStream* tokenStream) ;
+    explicit Literal(CodeManager* manager) ;
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 };
@@ -313,7 +304,7 @@ class GenericToken final : public TerminalNode {
 
     Type getType() const override ;
 
-    bool recursiveDecentParser() override;
+    bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
 
@@ -321,4 +312,4 @@ class GenericToken final : public TerminalNode {
 //---------------------------------------------------------------------------
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
-#endif //PLJIT_PARSETREE_H
+#endif //PLJIT_PARSETREE_HPP

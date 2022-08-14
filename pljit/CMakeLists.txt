@@ -1,6 +1,6 @@
 set(PLJIT_SOURCES
     # add your source files here
-        CodeManager.cpp TokenStream.cpp ParseTree.cpp CodeReference.cpp AST.cpp PrintParseTreeVisitor.cpp ASTVisitor.h PrintASTVistor.cpp  OptimizationASTVisitor.cpp EvaluationContext.cpp)
+        CodeManager.cpp TokenStream.cpp ParseTree.cpp CodeReference.cpp AST.cpp PrintParseTreeVisitor.cpp  PrintASTVistor.cpp  OptimizationASTVisitor.cpp EvaluationContext.cpp)
 
 
 add_library(pljit_core ${PLJIT_SOURCES})

@@ -1,5 +1,5 @@
-#ifndef PLJIT_EVALUATIONCONTEXT_H
-#define PLJIT_EVALUATIONCONTEXT_H
+#ifndef PLJIT_EVALUATIONCONTEXT_HPP
+#define PLJIT_EVALUATIONCONTEXT_HPP
 
 #include <string_view>
 #include <unordered_map>
@@ -37,4 +37,4 @@ class EvaluationContext {
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
 
-#endif //PLJIT_EVALUATIONCONTEXT_H
+#endif //PLJIT_EVALUATIONCONTEXT_HPP

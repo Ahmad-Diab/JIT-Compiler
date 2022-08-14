@@ -1,5 +1,5 @@
-#include "pljit/EvaluationContext.h"
-#include "pljit/AST.h"
+#include "pljit/EvaluationContext.hpp"
+#include "pljit/AST.hpp"
 #include <cassert>
 #include <iostream>
 

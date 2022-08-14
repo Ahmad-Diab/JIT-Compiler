@@ -1,5 +1,5 @@
-#include "PrintASTVistor.h"
-#include "AST.h"
+#include "PrintASTVistor.hpp"
+#include "AST.hpp"
 //---------------------------------------------------------------------------
 //using namespace std ;
 //---------------------------------------------------------------------------

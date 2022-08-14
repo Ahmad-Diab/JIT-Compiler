@@ -1,5 +1,5 @@
-#include "PrintParseTreeVisitor.h"
-#include "ParseTree.h"
+#include "PrintParseTreeVisitor.hpp"
+#include "ParseTree.hpp"
 //---------------------------------------------------------------------------
 //using namespace std ;
 //---------------------------------------------------------------------------

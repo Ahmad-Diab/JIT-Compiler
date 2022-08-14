@@ -1,7 +1,7 @@
-#ifndef PLJIT_TOKENSTREAM_H
-#define PLJIT_TOKENSTREAM_H
+#ifndef PLJIT_TOKENSTREAM_HPP
+#define PLJIT_TOKENSTREAM_HPP
 //---------------------------------------------------------------------------
-#include "CodeManager.h"
+#include "CodeManager.hpp"
 namespace jitcompiler {
 //---------------------------------------------------------------------------
 
@@ -24,28 +24,28 @@ public:
         CLOSE_BRACKET
     };
     class Token {
-        // TODO check member variables
-        public:
-        size_t line , start_index , last_index ;
+        // TODO Replace with codeReference
+        CodeReference codeReference ;
         TokenType type ;
-        explicit Token(size_t line , size_t start_index , size_t last_index , TokenType tokenType) : line(line) , start_index(start_index) , last_index(last_index) , type(tokenType){}
 
+        public:
+        explicit Token(CodeReference reference , TokenType tokenType) : codeReference(std::move(reference)) , type(tokenType){}
+        CodeReference& getCodeReference()  ;
+        TokenType getTokenType() const ;
     };
 
     explicit TokenStream(CodeManager* currentManager) ;
 
-    Token getNextToken() const ;
+    Token lookup() const ; // rename lookup
 
-    void popNextToken() ;
+    Token nextToken() ; // nextToken -> return nextToken
 
     bool isEmpty() const ;
 
     void compileCode()  ;
 
-    // TODO remove method ;
-    void reset() {
-        iterator_token = 0 ;
-    }
+    void reset() ;
+
 private:
     CodeManager *manager ;
     std::vector<Token> streamTokens ;
@@ -55,4 +55,4 @@ private:
 //---------------------------------------------------------------------------
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
-#endif //PLJIT_TOKENSTREAM_H
+#endif //PLJIT_TOKENSTREAM_HPP

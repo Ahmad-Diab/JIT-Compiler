@@ -1,11 +1,11 @@
-#ifndef PLJIT_AST_H
-#define PLJIT_AST_H
+#ifndef PLJIT_AST_HPP
+#define PLJIT_AST_HPP
 //---------------------------------------------------------------------------
-#include "pljit/CodeManager.h"
-#include "pljit/ParseTree.h"
+#include "pljit/CodeManager.hpp"
+#include "pljit/ParseTree.hpp"
 #include <cassert>
-#include <unordered_map>
 #include <optional>
+#include <unordered_map>
 
 namespace jitcompiler {
 //---------------------------------------------------------------------------
@@ -291,4 +291,4 @@ class LiteralAST final :public ExpressionAST {
 //---------------------------------------------------------------------------
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
-#endif //PLJIT_AST_H
+#endif //PLJIT_AST_HPP

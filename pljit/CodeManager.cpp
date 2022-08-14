@@ -1,4 +1,4 @@
-#include "CodeManager.h"
+#include "CodeManager.hpp"
 #include <cassert>
 #include <iostream>
 //---------------------------------------------------------------------------
@@ -10,58 +10,81 @@ CodeManager::CodeManager(string_view sourceCode) {
     for(size_t i = 0 , j = 0 , code_size = sourceCode.size() ;i < code_size && j < code_size ; i++ , j++) {
         while (j < code_size && sourceCode[j] != '\n')
             j++ ;
-        lines.emplace_back(sourceCode.substr(i , j - i)) ;
+        code_lines.emplace_back(sourceCode.substr(i , j - i)) ;
         i = j ;
     }
 }
 std::string_view CodeManager::getCurrentLine(size_t index) const {
-    return lines[index] ;
+    return code_lines[index] ;
 }
-
-void CodeManager::printCompileError(size_t currentLine, size_t start_index, size_t last_index , std::string_view expectedToken) {
-    assert(currentLine < lines.size()) ;
+void CodeManager::printTokenFailure(CodeReference codeReference) {
+    assert(codeReference.getStartLineRange().first == codeReference.getEndLineRange().first) ;
+    size_t currentLine = codeReference.getStartLineRange().first ;
+    size_t start_index = codeReference.getStartLineRange().second ;
+    size_t last_index = codeReference.getEndLineRange().second ;
+    assert(currentLine < code_lines.size()) ;
     errorOccurred = true ;
-    errStream << currentLine << ":" << start_index << ": error: ";
-    if(!expectedToken.empty())
-        errStream << "expected " << expectedToken << '\n' ;
-    else
-        errStream << '\n' ;
+    string_view invalidToken = code_lines[currentLine].substr(start_index , last_index - start_index + 1) ;
+    compileErrorStream << currentLine + 1 << ":" << start_index + 1 << ": error: invalid token \"" << invalidToken << "\"\n" ;
 
-    errStream << lines[currentLine] << '\n' ;
-    errStream.width(static_cast<uint32_t>(start_index + 1)) ;
-    errStream << '^' ;
+    compileErrorStream << code_lines[currentLine] << '\n' ;
+    compileErrorStream.width(static_cast<uint32_t>(start_index + 1)) ;
+    compileErrorStream << '^' ;
     while (start_index < last_index) {
-        errStream << "~" ;
+        compileErrorStream << "~" ;
         start_index ++ ;
     }
+    compileErrorStream << '\n' ;
+}
+void CodeManager::printCompileError(CodeReference codeReference , std::string_view expectedToken) {
+    assert(codeReference.getStartLineRange().first == codeReference.getEndLineRange().first) ;
+    size_t currentLine = codeReference.getStartLineRange().first ;
+    size_t start_index = codeReference.getStartLineRange().second ;
+    size_t last_index = codeReference.getEndLineRange().second ;
+    assert(currentLine < code_lines.size()) ;
+    errorOccurred = true ;
+    compileErrorStream << currentLine + 1 << ":" << start_index + 1 << ": error: ";
+    if(!expectedToken.empty())
+        compileErrorStream << "expected " << expectedToken << '\n' ;
+    else
+        compileErrorStream << '\n' ;
+
+    compileErrorStream << code_lines[currentLine] << '\n' ;
+    compileErrorStream.width(static_cast<uint32_t>(start_index + 1)) ;
+    compileErrorStream << '^' ;
+    while (start_index < last_index) {
+        compileErrorStream << "~" ;
+        start_index ++ ;
+    }
+    compileErrorStream << '\n' ;
 }
 void CodeManager::printCompileError(size_t token_length , std::string_view expectedToken ) {
 
     errorOccurred = true ;
-    if(lines.empty())
+    if(code_lines.empty())
     {
 
     }
     else {
-        size_t currentLine = lines.size() - 1;
-        assert(lines[currentLine].size()) ; // assume no empty line
-        size_t start_index = lines[currentLine].size() ;
+        size_t currentLine = code_lines.size() - 1;
+        assert(!code_lines[currentLine].empty()) ; // assume no empty line
+        size_t start_index = code_lines[currentLine].size() ;
 
-        errStream << currentLine << ":" << start_index << ": error: ";
+        compileErrorStream << currentLine << ":" << start_index << ": error: ";
     }
     if(!expectedToken.empty())
-        errStream << "expected \"" << expectedToken << "\"\n" ;
+        compileErrorStream << "expected \"" << expectedToken << "\"\n" ;
     else
-        errStream << '\n' ;
-    if(!lines.empty()) {
-        size_t currentLine = lines.size() - 1;
-        errStream << lines[currentLine] << '\n' ;
-        assert(lines[currentLine].size()) ; // assume no empty line
-        size_t start_index = lines[currentLine].size() ;
-        errStream.width(static_cast<uint32_t>(start_index + 1)) ;
-        errStream << '^' ;
+        compileErrorStream << '\n' ;
+    if(!code_lines.empty()) {
+        size_t currentLine = code_lines.size() - 1;
+        compileErrorStream << code_lines[currentLine] << '\n' ;
+        assert(!code_lines[currentLine].empty()) ; // assume no empty line
+        size_t start_index = code_lines[currentLine].size() ;
+        compileErrorStream.width(static_cast<uint32_t>(start_index + 1)) ;
+        compileErrorStream << '^' ;
         while (token_length > 1) {
-            errStream << "~" ;
+            compileErrorStream << "~" ;
             token_length -- ;
         }
 
@@ -69,14 +92,20 @@ void CodeManager::printCompileError(size_t token_length , std::string_view expec
 }
 
 std::size_t CodeManager::countLines() const {
-    return lines.size() ;
+    return code_lines.size() ;
 }
 bool CodeManager::isCodeError() const{
     return errorOccurred ;
 }
 std::string CodeManager::error_message() const {
-    return errStream.str() ;
+    return compileErrorStream.str() ;
 }
+std::string CodeManager::runtimeErrorMessage() {
+    string res = runtimeErrorStream.str() ;
+    runtimeErrorStream.clear() ;
+    return res ;
+}
+
 
 } // namespace jitcompiler
 //---------------------------------------------------------------------------

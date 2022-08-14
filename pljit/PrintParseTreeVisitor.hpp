@@ -1,7 +1,7 @@
-#ifndef PLJIT_PRINTPARSETREEVISITOR_H
-#define PLJIT_PRINTPARSETREEVISITOR_H
+#ifndef PLJIT_PRINTPARSETREEVISITOR_HPP
+#define PLJIT_PRINTPARSETREEVISITOR_HPP
 //---------------------------------------------------------------------------
-#include "ParseTreeVisitor.h"
+#include "ParseTreeVisitor.hpp"
 #include <sstream>
 namespace jitcompiler{
 //---------------------------------------------------------------------------
@@ -34,4 +34,4 @@ class PrintVisitor  : public ParseTreeVisitor{
 //---------------------------------------------------------------------------
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
-#endif //PLJIT_PRINTPARSETREEVISITOR_H
+#endif //PLJIT_PRINTPARSETREEVISITOR_HPP

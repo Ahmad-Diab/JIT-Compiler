@@ -1,7 +1,7 @@
-#include "pljit/AST.h"
-#include "ASTVisitor.h"
-#include "pljit/EvaluationContext.h"
-#include "pljit/OptimizationASTVisitor.h"
+#include "pljit/AST.hpp"
+#include "ASTVisitor.hpp"
+#include "pljit/EvaluationContext.hpp"
+#include "pljit/OptimizationASTVisitor.hpp"
 #include <iostream>
 #include <unordered_set>
 //---------------------------------------------------------------------------
@@ -478,9 +478,9 @@ IdentifierAST::IdentifierAST(CodeManager* manager, CodeReference codeReference) 
 
 }
 std::string_view IdentifierAST::print_token() const {
-    size_t line  = codeReference.getLineRange().first ;
-    size_t begin = codeReference.getStartLineRange().first ;
-    size_t last = codeReference.getStartLineRange().second ;
+    size_t line  = codeReference.getStartLineRange().first ;
+    size_t begin = codeReference.getStartLineRange().second ;
+    size_t last = codeReference.getEndLineRange().second ;
     return codeManager->getCurrentLine(line).substr(begin , last - begin + 1) ;
 }
 void IdentifierAST::accept(ASTVisitor& astVistor) const {
@@ -497,8 +497,8 @@ ASTNode::Type LiteralAST::getType() const {
     return ASTNode::Type::LITERAL;
 }
 LiteralAST::LiteralAST(CodeManager* manager, CodeReference codeReference) : ExpressionAST(manager, codeReference) {
-     size_t line  = codeReference.getLineRange().first ;
-     size_t begin = codeReference.getStartLineRange().first ;
+     size_t line  = codeReference.getStartLineRange().first ;
+     size_t begin = codeReference.getStartLineRange().second ;
      size_t last = codeReference.getStartLineRange().second ;
      string_view token = codeManager->getCurrentLine(line).substr(begin , last - begin + 1) ;
      value = str_to_int64(token) ;

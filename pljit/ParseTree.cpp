@@ -1,5 +1,6 @@
-#include "pljit/ParseTree.h"
-#include "pljit/ParseTreeVisitor.h"
+#include "pljit/ParseTree.hpp"
+#include "pljit/ParseTreeVisitor.hpp"
+#include "pljit/PrintParseTreeVisitor.hpp"
 #include <iostream>
 #include <utility>
 //---------------------------------------------------------------------------
@@ -13,34 +14,36 @@ size_t ParseTreeNode::getNodeId() const{
     return node_index ;
 }
 
-bool ParseTreeNode::isInitialized() const {
-    return isCompileError;
-}
 CodeReference ParseTreeNode::getReference() const {
     return codeReference ;
 }
 CodeManager* ParseTreeNode::getManager() const {
     return codeManager ;
 }
+std::string ParseTreeNode::print_dot() const {
+    PrintVisitor printVisitor ;
+    this->accept(printVisitor) ;
+    std::string result = "digraph {\n" +  printVisitor.getOutput() + "}\n";
+    return result ;
+}
 ParseTreeNode::~ParseTreeNode()  = default ;
 
-TerminalNode::TerminalNode(CodeManager* manager, TokenStream* tokenStream) {
+TerminalNode::TerminalNode(CodeManager* manager) {
     codeManager = manager ;
-    this->tokenStream = tokenStream ;
 }
 TerminalNode::TerminalNode(CodeManager* manager ,CodeReference codeReference) {
     this->codeManager = manager ;
-    this->codeReference = codeReference ;
+    this->codeReference = move(codeReference);
+
 }
 std::string_view TerminalNode::print_token() const {
-    size_t line = codeReference.getLineRange().first ;
-    size_t begin = codeReference.getStartLineRange().first ;
-    size_t last = codeReference.getStartLineRange().second ;
+    size_t line = codeReference.getStartLineRange().first ;
+    size_t begin = codeReference.getStartLineRange().second ;
+    size_t last = codeReference.getEndLineRange().second ;
     return codeManager->getCurrentLine(line).substr(begin , last - begin + 1) ;
 }
-NonTerminalNode::NonTerminalNode(CodeManager* manager, TokenStream* tokenStream) {
+NonTerminalNode::NonTerminalNode(CodeManager* manager) {
     codeManager = manager ;
-    this->tokenStream = tokenStream ;
 }
 const ParseTreeNode& NonTerminalNode::getChild(const size_t index) const {
     return *children[index].get();
@@ -56,48 +59,48 @@ std::unique_ptr<ParseTreeNode> NonTerminalNode::releaseChild(const size_t index)
 ParseTreeNode::Type FunctionDeclaration::getType() const {
     return Type::FUNCTION_DECLARATION ;
 }
-FunctionDeclaration::FunctionDeclaration(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager , tokenStream) {
+FunctionDeclaration::FunctionDeclaration(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool FunctionDeclaration::recursiveDecentParser() {
+bool FunctionDeclaration::recursiveDecentParser(TokenStream& tokenStream) {
     { // PARAMETER
-        unique_ptr<ParameterDeclaration> parameter_ptr = make_unique<ParameterDeclaration>(codeManager, tokenStream);
-        if (parameter_ptr.get()->recursiveDecentParser()) // optional
+        unique_ptr<ParameterDeclaration> parameter_ptr = make_unique<ParameterDeclaration>(codeManager);
+        if (parameter_ptr->recursiveDecentParser(tokenStream)) // optional
             children.emplace_back(move(parameter_ptr));
     }
     { // VARIABLE
-        unique_ptr<VariableDeclaration> variable_ptr = make_unique<VariableDeclaration>(codeManager, tokenStream);
-        if (variable_ptr.get()->recursiveDecentParser()) // optional
+        unique_ptr<VariableDeclaration> variable_ptr = make_unique<VariableDeclaration>(codeManager);
+        if (variable_ptr->recursiveDecentParser(tokenStream)) // optional
             children.emplace_back(move(variable_ptr));
     }
     { // CONSTANT
-        unique_ptr<ConstantDeclaration> constant_ptr = make_unique<ConstantDeclaration>(codeManager, tokenStream);
-        if (constant_ptr.get()->recursiveDecentParser()) // optional
+        unique_ptr<ConstantDeclaration> constant_ptr = make_unique<ConstantDeclaration>(codeManager);
+        if (constant_ptr->recursiveDecentParser(tokenStream)) // optional
             children.emplace_back(move(constant_ptr));
     }
     { // COMPOUND
-        unique_ptr<CompoundStatement> compound_ptr = make_unique<CompoundStatement>(codeManager, tokenStream);
-        if (compound_ptr.get()->recursiveDecentParser())
+        unique_ptr<CompoundStatement> compound_ptr = make_unique<CompoundStatement>(codeManager);
+        if (compound_ptr->recursiveDecentParser(tokenStream))
             children.emplace_back(move(compound_ptr));
         else {
-            isCompileError = true;
+             // TODO error handling;
             return false;
         }
     }
     { // TERMINATOR
-        if(tokenStream->isEmpty())
+        if(tokenStream.isEmpty())
         {
             codeManager->printCompileError(1 , ".") ;
             return false ;
         }
-        else if (tokenStream->getNextToken().type == TokenStream::TokenType::TERMINATOR) {
-            TokenStream::Token token = tokenStream->getNextToken();
-            tokenStream->popNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+        else if (tokenStream.lookup().getTokenType() == TokenStream::TokenType::TERMINATOR) {
+            TokenStream::Token token = tokenStream.lookup();
+            tokenStream.nextToken();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , token.getCodeReference());
             children.emplace_back(move(genericToken));
         }
         else {
-            codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , ".") ;
-            isCompileError = true;
+            codeManager->printCompileError(tokenStream.lookup().getCodeReference()  , ".") ;
+             // TODO error handling;
             return false;
 
         }
@@ -112,55 +115,55 @@ void FunctionDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type ParameterDeclaration::getType() const {
     return Type::PARAMETER_DECLARATION ;
 }
-ParameterDeclaration::ParameterDeclaration(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+ParameterDeclaration::ParameterDeclaration(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool ParameterDeclaration::recursiveDecentParser() {
+bool ParameterDeclaration::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        if (tokenStream->getNextToken().type == TokenStream::KEYWORD)
+        if (tokenStream.lookup().getTokenType() == TokenStream::KEYWORD)
         {
-            TokenStream::Token token = tokenStream->getNextToken() ;
-            string_view line = codeManager->getCurrentLine(token.line) ;
-            string_view token_str = line.substr(token.start_index , token.last_index - token.start_index + 1) ;
+            TokenStream::Token token = tokenStream.lookup() ;
+            string_view line = codeManager->getCurrentLine(token.getCodeReference().getStartLineRange().first) ;
+            size_t start_index = token.getCodeReference().getStartLineRange().second ;
+            size_t last_index = token.getCodeReference().getEndLineRange().second ;
+            string_view token_str = line.substr(start_index , last_index - start_index + 1) ;
             if(token_str == "PARAM") {
-
-                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , token.getCodeReference());
                 children.emplace_back(move(genericToken));
-                tokenStream->popNextToken();
-
+                tokenStream.nextToken();
             }
             else {
-                isCompileError = true ;
+                 // TODO error handling ;
                 return false ;
             }
         }
         else {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
-        unique_ptr<DeclartorList> declartorList = make_unique<DeclartorList>(codeManager , tokenStream) ;
-        if(declartorList->recursiveDecentParser())
+        unique_ptr<DeclartorList> declartorList = make_unique<DeclartorList>(codeManager ) ;
+        if(declartorList->recursiveDecentParser(tokenStream))
             children.emplace_back(move(declartorList)) ;
         else
         {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
         // inside terminal node
-        if(tokenStream->getNextToken().type == TokenStream::SEMI_COLON_SEPARATOR)
+        if(tokenStream.lookup().getTokenType() == TokenStream::SEMI_COLON_SEPARATOR)
         {
-            TokenStream::Token token = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+            TokenStream::Token token = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , token.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
+            tokenStream.nextToken();
         }
         else
         {
-            codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , ";") ;
-            isCompileError = true ;
+            codeManager->printCompileError(tokenStream.lookup().getCodeReference() , ";") ;
+             // TODO error handling ;
             return false ;
         }
     }
@@ -170,57 +173,59 @@ bool ParameterDeclaration::recursiveDecentParser() {
 void ParameterDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
     parseTreeVisitor.visit(*this) ;
 }
-VariableDeclaration::VariableDeclaration(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+VariableDeclaration::VariableDeclaration(CodeManager* manager) : NonTerminalNode(manager) {
     node_index = node_index_incrementer++ ;
 }
 ParseTreeNode::Type VariableDeclaration::getType() const {
     return Type::VARIABLE_DECLARATION ;
 }
-bool VariableDeclaration::recursiveDecentParser() {
+bool VariableDeclaration::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        if (tokenStream->getNextToken().type == TokenStream::KEYWORD) {
-            TokenStream::Token token = tokenStream->getNextToken() ;
-            string_view line = codeManager->getCurrentLine(token.line) ;
-            string_view token_str = line.substr(token.start_index , token.last_index - token.start_index + 1) ;
+        if (tokenStream.lookup().getTokenType() == TokenStream::KEYWORD) {
+            TokenStream::Token token = tokenStream.lookup() ;
+            string_view line = codeManager->getCurrentLine(token.getCodeReference().getStartLineRange().first) ;
+            size_t start_index = token.getCodeReference().getStartLineRange().second ;
+            size_t last_index = token.getCodeReference().getEndLineRange().second ;
+            string_view token_str = line.substr(start_index , last_index - start_index + 1) ;
             if(token_str == "VAR") {
-                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
                 children.emplace_back(move(genericToken));
-                tokenStream->popNextToken();
+                tokenStream.nextToken();
             }
             else {
-                isCompileError = true ;
+                 // TODO error handling ;
                 return false ;
             }
         }
         else {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
-        unique_ptr<DeclartorList> declartorList = make_unique<DeclartorList>(codeManager , tokenStream) ;
-        if(declartorList->recursiveDecentParser())
+        unique_ptr<DeclartorList> declartorList = make_unique<DeclartorList>(codeManager ) ;
+        if(declartorList->recursiveDecentParser(tokenStream))
             children.emplace_back(move(declartorList)) ;
         else
         {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
         // inside terminal node
-        if(tokenStream->getNextToken().type == TokenStream::SEMI_COLON_SEPARATOR)
+        if(tokenStream.lookup().getTokenType() == TokenStream::SEMI_COLON_SEPARATOR)
         {
-            TokenStream::Token token = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+            TokenStream::Token token = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
-            isCompileError = false;
+            tokenStream.nextToken();
         }
         else
         {
-            codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , ";") ;
-            isCompileError = true ;
+
+            codeManager->printCompileError(tokenStream.lookup().getCodeReference() , ";") ;
+             // TODO error handling ;
             return false ;
         }
     }
@@ -234,52 +239,53 @@ void VariableDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type ConstantDeclaration::getType() const {
     return Type::CONSTANT_DECLARATION ;
 }
-ConstantDeclaration::ConstantDeclaration(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+ConstantDeclaration::ConstantDeclaration(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool ConstantDeclaration::recursiveDecentParser() {
+bool ConstantDeclaration::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        if (tokenStream->getNextToken().type == TokenStream::KEYWORD) {
-            TokenStream::Token token = tokenStream->getNextToken() ;
-            string_view line = codeManager->getCurrentLine(token.line) ;
-            string_view token_str = line.substr(token.start_index , token.last_index - token.start_index + 1) ;
+        if (tokenStream.lookup().getTokenType() == TokenStream::KEYWORD) {
+            TokenStream::Token token = tokenStream.lookup() ;
+            string_view line = codeManager->getCurrentLine(token.getCodeReference().getStartLineRange().first) ;
+            size_t start_index = token.getCodeReference().getStartLineRange().second ;
+            size_t last_index = token.getCodeReference().getEndLineRange().second ;
+            string_view token_str = line.substr(start_index , last_index - start_index + 1) ;
             if(token_str == "CONST") {
-                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , token.getCodeReference());
                 children.emplace_back(move(genericToken));
-                tokenStream->popNextToken();
+                tokenStream.nextToken();
             }
             else {
-                isCompileError = true ;
+                 // TODO error handling ;
                 return false ;
             }
         }
         else {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
-        unique_ptr<InitDeclartorList> initDeclartorList = make_unique<InitDeclartorList>(codeManager , tokenStream) ;
-        if(initDeclartorList->recursiveDecentParser())
+        unique_ptr<InitDeclartorList> initDeclartorList = make_unique<InitDeclartorList>(codeManager) ;
+        if(initDeclartorList->recursiveDecentParser(tokenStream))
             children.emplace_back(move(initDeclartorList)) ;
         else {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
         // inside terminal node
-        if(tokenStream->getNextToken().type == TokenStream::SEMI_COLON_SEPARATOR)
+        if(tokenStream.lookup().getTokenType() == TokenStream::SEMI_COLON_SEPARATOR)
         {
-            TokenStream::Token token = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+            TokenStream::Token token = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
-            isCompileError = false;
+            tokenStream.nextToken();
         }
         else
         {
-            codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , ";") ;
-            isCompileError = true ;
+            codeManager->printCompileError(tokenStream.lookup().getCodeReference(), ";") ;
+             // TODO error handling ;
             return false ;
         }
     }
@@ -292,33 +298,32 @@ void ConstantDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type DeclartorList::getType() const {
     return Type::DECLARATOR_LIST ;
 }
-DeclartorList::DeclartorList(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+DeclartorList::DeclartorList(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool DeclartorList::recursiveDecentParser() {
+bool DeclartorList::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager , tokenStream) ;
-        if(identifierToken->recursiveDecentParser())
+        unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager) ;
+        if(identifierToken->recursiveDecentParser(tokenStream))
             children.emplace_back(move(identifierToken)) ;
         else
         {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
-        while (!tokenStream->isEmpty() && tokenStream->getNextToken().type == TokenStream::COMMA_SEPARATOR)
+        while (!tokenStream.isEmpty() && tokenStream.lookup().getTokenType() == TokenStream::COMMA_SEPARATOR)
         {
-            TokenStream::Token commaToken = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({commaToken.line, commaToken.line}, {commaToken.start_index, commaToken.last_index}, {commaToken.start_index, commaToken.last_index}));
+            TokenStream::Token commaToken = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , commaToken.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
+            tokenStream.nextToken();
 
-            unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager , tokenStream) ;
-            if(identifierToken->recursiveDecentParser())
+            unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager) ;
+            if(identifierToken->recursiveDecentParser(tokenStream))
                 children.emplace_back(move(identifierToken)) ;
-            else
-            {
-                isCompileError = true ;
+            else {
+                 // TODO error handling ;
                 return false ;
             }
         }
@@ -332,31 +337,31 @@ void DeclartorList::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type InitDeclartorList::getType() const {
     return Type::INIT_DECLARATOR_LIST ;
 }
-InitDeclartorList::InitDeclartorList(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+InitDeclartorList::InitDeclartorList(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool InitDeclartorList::recursiveDecentParser() {
+bool InitDeclartorList::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        unique_ptr<InitDeclartor> initDeclartor = make_unique<InitDeclartor>(codeManager, tokenStream);
+        unique_ptr<InitDeclartor> initDeclartor = make_unique<InitDeclartor>(codeManager);
 
-        if (initDeclartor->recursiveDecentParser())
+        if (initDeclartor->recursiveDecentParser(tokenStream))
             children.emplace_back(move(initDeclartor));
         else {
-            isCompileError = true;
+             // TODO error handling;
             return false;
         }
     }
     {
-        while (!tokenStream->isEmpty() && tokenStream->getNextToken().type == TokenStream::COMMA_SEPARATOR) {
-            TokenStream::Token commaToken = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({commaToken.line, commaToken.line}, {commaToken.start_index, commaToken.last_index}, {commaToken.start_index, commaToken.last_index}));
+        while (!tokenStream.isEmpty() && tokenStream.lookup().getTokenType() == TokenStream::COMMA_SEPARATOR) {
+            TokenStream::Token commaToken = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , commaToken.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
+            tokenStream.nextToken();
 
-            unique_ptr<InitDeclartor> initDeclartor = make_unique<InitDeclartor>(codeManager, tokenStream);
-            if (initDeclartor->recursiveDecentParser())
+            unique_ptr<InitDeclartor> initDeclartor = make_unique<InitDeclartor>(codeManager);
+            if (initDeclartor->recursiveDecentParser(tokenStream))
                 children.emplace_back(move(initDeclartor));
             else {
-                isCompileError = true;
+                 // TODO error handling;
                 return false;
             }
         }
@@ -370,41 +375,40 @@ void InitDeclartorList::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type InitDeclartor::getType() const {
     return Type::INIT_DECLARATOR ;
 }
-InitDeclartor::InitDeclartor(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+InitDeclartor::InitDeclartor(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool InitDeclartor::recursiveDecentParser() {
+bool InitDeclartor::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager , tokenStream) ;
-        if(identifierToken->recursiveDecentParser())
+        unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager ) ;
+        if(identifierToken->recursiveDecentParser(tokenStream))
             children.emplace_back(move(identifierToken)) ;
         else
         {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
-        if (tokenStream->getNextToken().type == TokenStream::CONST_ASSIGNMENT)
+        if (tokenStream.lookup().getTokenType() == TokenStream::CONST_ASSIGNMENT)
         {
-            TokenStream::Token constAssignment = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({constAssignment.line, constAssignment.line}, {constAssignment.start_index, constAssignment.last_index}, {constAssignment.start_index, constAssignment.last_index}));
+            TokenStream::Token constAssignment = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,constAssignment.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
+            tokenStream.nextToken();
         }
         else
         {
-            codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , "=") ;
-            isCompileError = true ;
+            codeManager->printCompileError(tokenStream.lookup().getCodeReference() , "=") ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
-        unique_ptr<Literal> literal_ptr = make_unique<Literal>(codeManager , tokenStream) ;
-        if(literal_ptr->recursiveDecentParser())
+        unique_ptr<Literal> literal_ptr = make_unique<Literal>(codeManager) ;
+        if(literal_ptr->recursiveDecentParser(tokenStream))
             children.emplace_back(move(literal_ptr)) ;
-        else
-        {
-            isCompileError = true ;
+        else {
+             // TODO error handling ;
             return false ;
         }
     }
@@ -417,59 +421,63 @@ void InitDeclartor::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type CompoundStatement::getType() const {
     return Type::COMPOUND_STATEMENT ;
 }
-CompoundStatement::CompoundStatement(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+CompoundStatement::CompoundStatement(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool CompoundStatement::recursiveDecentParser() {
+bool CompoundStatement::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        if (tokenStream->getNextToken().type == TokenStream::KEYWORD) {
-            TokenStream::Token token = tokenStream->getNextToken() ;
-            string_view line = codeManager->getCurrentLine(token.line) ;
-            string_view token_str = line.substr(token.start_index , token.last_index - token.start_index + 1) ;
+        if (tokenStream.lookup().getTokenType() == TokenStream::KEYWORD) {
+            TokenStream::Token token = tokenStream.lookup() ;
+            string_view line = codeManager->getCurrentLine(token.getCodeReference().getStartLineRange().first) ;
+            size_t start_index = token.getCodeReference().getStartLineRange().second ;
+            size_t last_index = token.getCodeReference().getEndLineRange().second ;
+            string_view token_str = line.substr(start_index , last_index - start_index + 1) ;
             if(token_str == "BEGIN") {
-                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
                 children.emplace_back(move(genericToken));
-                tokenStream->popNextToken();
+                tokenStream.nextToken();
             }
             else {
-                codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , "BEGIN keyword") ;
-                isCompileError = true ;
+                codeManager->printCompileError(tokenStream.lookup().getCodeReference(), "BEGIN keyword") ;
+                 // TODO error handling ;
                 return false ;
             }
         }
         else {
-            codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , "BEGIN keyword") ;
-            isCompileError = true ;
+            codeManager->printCompileError(tokenStream.lookup().getCodeReference() , "BEGIN keyword") ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
-        unique_ptr<StatementList> statementList = make_unique<StatementList>(codeManager , tokenStream) ;
-        if(statementList->recursiveDecentParser())
+        unique_ptr<StatementList> statementList = make_unique<StatementList>(codeManager) ;
+        if(statementList->recursiveDecentParser(tokenStream))
             children.emplace_back(move(statementList)) ;
         else {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
-        if (tokenStream->getNextToken().type == TokenStream::KEYWORD) {
-            TokenStream::Token token = tokenStream->getNextToken() ;
-            string_view line = codeManager->getCurrentLine(token.line) ;
-            string_view token_str = line.substr(token.start_index , token.last_index - token.start_index + 1) ;
+        if (tokenStream.lookup().getTokenType() == TokenStream::KEYWORD) {
+            TokenStream::Token token = tokenStream.lookup() ;
+            string_view line = codeManager->getCurrentLine(token.getCodeReference().getStartLineRange().first) ;
+            size_t start_index = token.getCodeReference().getStartLineRange().second ;
+            size_t last_index = token.getCodeReference().getEndLineRange().second ;
+            string_view token_str = line.substr(start_index , last_index - start_index + 1) ;
             if(token_str == "END") {
-                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
                 children.emplace_back(move(genericToken));
-                tokenStream->popNextToken();
+                tokenStream.nextToken();
             }
             else {
-                codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , "END keyword") ;
-                isCompileError = true ;
+                codeManager->printCompileError(tokenStream.lookup().getCodeReference() , "END keyword") ;
+                 // TODO error handling ;
                 return false ;
             }
         }
         else {
-            codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , "END keyword") ;
-            isCompileError = true ;
+            codeManager->printCompileError(tokenStream.lookup().getCodeReference() , "END keyword") ;
+             // TODO error handling ;
             return false ;
         }
     }
@@ -482,32 +490,32 @@ void CompoundStatement::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type StatementList::getType() const {
     return Type::STATEMENT_LIST ;
 }
-StatementList::StatementList(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+StatementList::StatementList(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool StatementList::recursiveDecentParser() {
+bool StatementList::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        unique_ptr<Statement> statement_ptr = make_unique<Statement>(codeManager, tokenStream);
-        if(statement_ptr->recursiveDecentParser())
+        unique_ptr<Statement> statement_ptr = make_unique<Statement>(codeManager);
+        if(statement_ptr->recursiveDecentParser(tokenStream))
             children.emplace_back(move(statement_ptr)) ;
         else
         {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
-        while (!tokenStream->isEmpty() && tokenStream->getNextToken().type == TokenStream::SEMI_COLON_SEPARATOR) {
-            TokenStream::Token commaToken = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({commaToken.line, commaToken.line}, {commaToken.start_index, commaToken.last_index}, {commaToken.start_index, commaToken.last_index}));
+        while (!tokenStream.isEmpty() && tokenStream.lookup().getTokenType() == TokenStream::SEMI_COLON_SEPARATOR) {
+            TokenStream::Token commaToken = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , commaToken.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
+            tokenStream.nextToken();
 
-            unique_ptr<Statement> statement_ptr = make_unique<Statement>(codeManager, tokenStream);
-            if(statement_ptr->recursiveDecentParser())
+            unique_ptr<Statement> statement_ptr = make_unique<Statement>(codeManager);
+            if(statement_ptr->recursiveDecentParser(tokenStream))
                 children.emplace_back(move(statement_ptr)) ;
             else
             {
-                isCompileError = true ;
+                 // TODO error handling ;
                 return false ;
             }
         }
@@ -521,44 +529,46 @@ void StatementList::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type Statement::getType() const {
     return Type::STATEMENT ;
 }
-Statement::Statement(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+Statement::Statement(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool Statement::recursiveDecentParser() {
-    if(tokenStream->getNextToken().type == TokenStream::TokenType::KEYWORD) {
-        TokenStream::Token token = tokenStream->getNextToken() ;
-        string_view line = codeManager->getCurrentLine(token.line) ;
-        string_view token_str = line.substr(token.start_index , token.last_index - token.start_index + 1) ;
+bool Statement::recursiveDecentParser(TokenStream& tokenStream) {
+    if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::KEYWORD) {
+        TokenStream::Token token = tokenStream.lookup() ;
+        string_view line = codeManager->getCurrentLine(token.getCodeReference().getStartLineRange().first) ;
+        size_t start_index = token.getCodeReference().getStartLineRange().second ;
+        size_t last_index = token.getCodeReference().getEndLineRange().second ;
+        string_view token_str = line.substr(start_index , last_index - start_index + 1) ;
         if(token_str == "RETURN") {
             {
-                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
                 children.emplace_back(move(genericToken));
-                tokenStream->popNextToken();
+                tokenStream.nextToken();
             }
             {
-                unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager , tokenStream) ;
-                if(additiveExpression->recursiveDecentParser())
+                unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager ) ;
+                if(additiveExpression->recursiveDecentParser(tokenStream))
                     children.emplace_back(move(additiveExpression)) ;
                 else
                 {
-                    isCompileError = true;
+                     // TODO error handling;
                     return false ;
                 }
             }
         }
         else
         {
-            codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , "RETURN statement") ;
-            isCompileError = true;
+            codeManager->printCompileError(tokenStream.lookup().getCodeReference() , "RETURN statement") ;
+             // TODO error handling;
             return false ;
         }
     }
     else {
-        unique_ptr<AssignmentExpression> assignmentExpression = make_unique<AssignmentExpression>(codeManager , tokenStream) ;
-        if(assignmentExpression->recursiveDecentParser())
+        unique_ptr<AssignmentExpression> assignmentExpression = make_unique<AssignmentExpression>(codeManager ) ;
+        if(assignmentExpression->recursiveDecentParser(tokenStream))
             children.emplace_back(move(assignmentExpression)) ;
         else
         {
-            isCompileError = true;
+             // TODO error handling;
             return false ;
         }
     }
@@ -571,32 +581,32 @@ void Statement::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type AdditiveExpression::getType() const {
     return Type::ADDITIVE_EXPRESSION ;
 }
-AdditiveExpression::AdditiveExpression(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+AdditiveExpression::AdditiveExpression(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool AdditiveExpression::recursiveDecentParser() {
+bool AdditiveExpression::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        unique_ptr<MultiplicativeExpression> multiplicativeExpression = make_unique<MultiplicativeExpression>(codeManager , tokenStream) ;
-        if(multiplicativeExpression->recursiveDecentParser())
+        unique_ptr<MultiplicativeExpression> multiplicativeExpression = make_unique<MultiplicativeExpression>(codeManager) ;
+        if(multiplicativeExpression->recursiveDecentParser(tokenStream))
             children.emplace_back(move(multiplicativeExpression)) ;
         else {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
-        if(!tokenStream->isEmpty() && (tokenStream->getNextToken().type == TokenStream::TokenType::PLUS_OPERATOR || tokenStream->getNextToken().type == TokenStream::TokenType::MINUS_OPERATOR))
+        if(!tokenStream.isEmpty() && (tokenStream.lookup().getTokenType() == TokenStream::TokenType::PLUS_OPERATOR || tokenStream.lookup().getTokenType() == TokenStream::TokenType::MINUS_OPERATOR))
         {
-            TokenStream::Token operatorToken = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({operatorToken.line, operatorToken.line}, {operatorToken.start_index, operatorToken.last_index}, {operatorToken.start_index, operatorToken.last_index}));
+            TokenStream::Token operatorToken = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,operatorToken.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
+            tokenStream.nextToken();
 
 
-            unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager , tokenStream) ;
-            if(additiveExpression->recursiveDecentParser())
+            unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager ) ;
+            if(additiveExpression->recursiveDecentParser(tokenStream))
                 children.emplace_back(move(additiveExpression)) ;
             else {
-                isCompileError = true ;
+                 // TODO error handling ;
                 return false ;
             }
         }
@@ -610,31 +620,31 @@ void AdditiveExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type MultiplicativeExpression::getType() const {
     return Type::MULTIPLICATIVE_EXPRESSION ;
 }
-MultiplicativeExpression::MultiplicativeExpression(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+MultiplicativeExpression::MultiplicativeExpression(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool MultiplicativeExpression::recursiveDecentParser() {
+bool MultiplicativeExpression::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        unique_ptr<UnaryExpression> unaryExpression = make_unique<UnaryExpression>(codeManager, tokenStream);
-        if (unaryExpression->recursiveDecentParser())
+        unique_ptr<UnaryExpression> unaryExpression = make_unique<UnaryExpression>(codeManager);
+        if (unaryExpression->recursiveDecentParser(tokenStream))
             children.emplace_back(move(unaryExpression)) ;
         else {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
     {
-        if(!tokenStream->isEmpty() && (tokenStream->getNextToken().type == TokenStream::TokenType::MULTIPLY_OPERATOR || tokenStream->getNextToken().type == TokenStream::TokenType::DIVIDE_OPERATOR))
+        if(!tokenStream.isEmpty() && (tokenStream.lookup().getTokenType() == TokenStream::TokenType::MULTIPLY_OPERATOR || tokenStream.lookup().getTokenType() == TokenStream::TokenType::DIVIDE_OPERATOR))
         {
-            TokenStream::Token operatorToken = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({operatorToken.line, operatorToken.line}, {operatorToken.start_index, operatorToken.last_index}, {operatorToken.start_index, operatorToken.last_index}));
+            TokenStream::Token operatorToken = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,operatorToken.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
+            tokenStream.nextToken();
 
-            unique_ptr<MultiplicativeExpression> multiplicativeExpression = make_unique<MultiplicativeExpression>(codeManager , tokenStream) ;
-            if(multiplicativeExpression->recursiveDecentParser())
+            unique_ptr<MultiplicativeExpression> multiplicativeExpression = make_unique<MultiplicativeExpression>(codeManager ) ;
+            if(multiplicativeExpression->recursiveDecentParser(tokenStream))
                 children.emplace_back(move(multiplicativeExpression)) ;
             else {
-                isCompileError = true ;
+                 // TODO error handling ;
                 return false ;
             }
         }
@@ -648,38 +658,38 @@ void MultiplicativeExpression::accept(ParseTreeVisitor& parseTreeVisitor) const 
 ParseTreeNode::Type AssignmentExpression::getType() const {
     return Type::ASSIGNMENT_EXPRESSION ;
 }
-AssignmentExpression::AssignmentExpression(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+AssignmentExpression::AssignmentExpression(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool AssignmentExpression::recursiveDecentParser() {
+bool AssignmentExpression::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager , tokenStream) ;
-        if(identifierToken->recursiveDecentParser())
+        unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager ) ;
+        if(identifierToken->recursiveDecentParser(tokenStream))
             children.emplace_back(move(identifierToken)) ;
         else
         {
-            isCompileError = true ;
+            // TODO error handling
             return false ;
         }
     }
     {
-        if(tokenStream->getNextToken().type == TokenStream::TokenType::VAR_ASSIGNMENT) {
-            TokenStream::Token token = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+        if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::VAR_ASSIGNMENT) {
+            TokenStream::Token token = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
+            tokenStream.nextToken();
 
-            unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager , tokenStream) ;
-            if(additiveExpression->recursiveDecentParser()) {
+            unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager) ;
+            if(additiveExpression->recursiveDecentParser(tokenStream)) {
                 children.emplace_back(move(additiveExpression)) ;
             }
             else {
-                isCompileError = true ;
+                 // TODO error handling ;
                 return false ;
             }
         }
         else {
-            codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , ":=") ;
-            isCompileError = true ;
+            codeManager->printCompileError(tokenStream.lookup().getCodeReference(), ":=") ;
+             // TODO error handling ;
             return false ;
         }
     }
@@ -692,21 +702,21 @@ void AssignmentExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type UnaryExpression::getType() const {
     return Type::UNARY_EXPRESSION ;
 }
-UnaryExpression::UnaryExpression(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+UnaryExpression::UnaryExpression(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool UnaryExpression::recursiveDecentParser() {
+bool UnaryExpression::recursiveDecentParser(TokenStream& tokenStream) {
     {
-        if ((tokenStream->getNextToken().type == TokenStream::TokenType::PLUS_OPERATOR) || (tokenStream->getNextToken().type == TokenStream::TokenType::MINUS_OPERATOR)) {
-            TokenStream::Token token = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({token.line, token.line}, {token.start_index, token.last_index}, {token.start_index, token.last_index}));
+        if ((tokenStream.lookup().getTokenType() == TokenStream::TokenType::PLUS_OPERATOR) || (tokenStream.lookup().getTokenType() == TokenStream::TokenType::MINUS_OPERATOR)) {
+            TokenStream::Token token = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
+            tokenStream.nextToken();
         }
-        unique_ptr<PrimaryExpression> primaryExpression = make_unique<PrimaryExpression>(codeManager , tokenStream) ;
-        if(primaryExpression->recursiveDecentParser())
+        unique_ptr<PrimaryExpression> primaryExpression = make_unique<PrimaryExpression>(codeManager ) ;
+        if(primaryExpression->recursiveDecentParser(tokenStream))
             children.emplace_back(move(primaryExpression)) ;
         else {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
@@ -719,65 +729,65 @@ void UnaryExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type PrimaryExpression::getType() const {
     return Type::PRIMARY_EXPRESSION ;
 }
-PrimaryExpression::PrimaryExpression(CodeManager* manager, TokenStream* tokenStream) : NonTerminalNode(manager, tokenStream) {
+PrimaryExpression::PrimaryExpression(CodeManager* manager) : NonTerminalNode(manager) {
 }
-bool PrimaryExpression::recursiveDecentParser() {
-    if(tokenStream->getNextToken().type == TokenStream::TokenType::IDENTIFIER)
+bool PrimaryExpression::recursiveDecentParser(TokenStream& tokenStream) {
+    if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::IDENTIFIER)
     {
-        unique_ptr<Identifier> identifier = make_unique<Identifier>(codeManager , tokenStream) ;
-        if(identifier->recursiveDecentParser())
+        unique_ptr<Identifier> identifier = make_unique<Identifier>(codeManager ) ;
+        if(identifier->recursiveDecentParser(tokenStream))
             children.emplace_back(move(identifier)) ;
         else
         {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
-    else if(tokenStream->getNextToken().type == TokenStream::TokenType::LITERAL)
+    else if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::LITERAL)
     {
-        unique_ptr<Literal> literal = make_unique<Literal>(codeManager , tokenStream) ;
-        if(literal->recursiveDecentParser())
+        unique_ptr<Literal> literal = make_unique<Literal>(codeManager ) ;
+        if(literal->recursiveDecentParser(tokenStream))
             children.emplace_back(move(literal)) ;
         else {
-            isCompileError = true ;
+             // TODO error handling ;
             return false ;
         }
     }
-    else if(tokenStream->getNextToken().type == TokenStream::TokenType::OPEN_BRACKET)
+    else if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::OPEN_BRACKET)
     {
         {
-            TokenStream::Token open_bracket_token = tokenStream->getNextToken();
-            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({open_bracket_token.line, open_bracket_token.line}, {open_bracket_token.start_index, open_bracket_token.last_index}, {open_bracket_token.start_index, open_bracket_token.last_index}));
+            TokenStream::Token open_bracket_token = tokenStream.lookup();
+            unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,open_bracket_token.getCodeReference());
             children.emplace_back(move(genericToken));
-            tokenStream->popNextToken();
+            tokenStream.nextToken();
         }
         {
-            unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager , tokenStream) ;
-            if(additiveExpression->recursiveDecentParser())
+            unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager ) ;
+            if(additiveExpression->recursiveDecentParser(tokenStream))
                 children.emplace_back(move(additiveExpression)) ;
             else {
-                isCompileError = true ;
+                 // TODO error handling ;
                 return false ;
             }
         }
         {
-            if(tokenStream->getNextToken().type == TokenStream::TokenType::CLOSE_BRACKET)
+            if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::CLOSE_BRACKET)
             {
-                TokenStream::Token close_bracket_token = tokenStream->getNextToken();
-                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,CodeReference({close_bracket_token.line, close_bracket_token.line}, {close_bracket_token.start_index, close_bracket_token.last_index}, {close_bracket_token.start_index, close_bracket_token.last_index}));
+                TokenStream::Token close_bracket_token = tokenStream.lookup();
+                unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,close_bracket_token.getCodeReference());
                 children.emplace_back(move(genericToken));
-                tokenStream->popNextToken();
+                tokenStream.nextToken();
             }
             else {
-                codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , ")") ;
-                isCompileError = true ;
+                codeManager->printCompileError(tokenStream.lookup().getCodeReference() , ")") ;
+                 // TODO error handling ;
                 return false ;
             }
         }
     }
     else {
-        codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , "IDENTIFIER , LITERAL or Open Bracket") ;
-        isCompileError = true ;
+        codeManager->printCompileError(tokenStream.lookup().getCodeReference() , "IDENTIFIER , LITERAL or Open Bracket") ;
+         // TODO error handling ;
         return false ;
     }
     node_index = node_index_incrementer++ ;
@@ -789,17 +799,16 @@ void PrimaryExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type Identifier::getType() const {
     return Type::IDENTIFIER;
 }
-Identifier::Identifier(CodeManager* manager, TokenStream* tokenStream) : TerminalNode(manager, tokenStream) {
+Identifier::Identifier(CodeManager* manager) : TerminalNode(manager) {
 }
-bool Identifier::recursiveDecentParser() {
-    if(tokenStream->getNextToken().type == TokenStream::TokenType::IDENTIFIER) {
-        TokenStream::Token identifier_token = tokenStream->getNextToken();
-        this->codeReference = CodeReference({identifier_token.line, identifier_token.line}, {identifier_token.start_index, identifier_token.last_index}, {identifier_token.start_index, identifier_token.last_index}) ;
-        tokenStream->popNextToken();
+bool Identifier::recursiveDecentParser(TokenStream& tokenStream) {
+    if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::IDENTIFIER) {
+        TokenStream::Token identifier_token = tokenStream.lookup();
+        this->codeReference = identifier_token.getCodeReference() ;
+        tokenStream.nextToken();
     }
     else {
-        codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , "IDENTIFIER") ;
-        isCompileError = false ;
+        codeManager->printCompileError(tokenStream.lookup().getCodeReference() , "IDENTIFIER") ;
         return false ;
     }
     node_index = node_index_incrementer++ ;
@@ -808,21 +817,20 @@ bool Identifier::recursiveDecentParser() {
 void Identifier::accept(ParseTreeVisitor& parseTreeVisitor) const {
     parseTreeVisitor.visit(*this) ;
 }
-Literal::Literal(CodeManager* manager, TokenStream* tokenStream) : TerminalNode(manager, tokenStream) {
+Literal::Literal(CodeManager* manager) : TerminalNode(manager) {
 }
 ParseTreeNode::Type Literal::getType() const {
     return Type::LITERAL ;
 }
-bool Literal::recursiveDecentParser() {
-    if(tokenStream->getNextToken().type == TokenStream::TokenType::LITERAL) {
+bool Literal::recursiveDecentParser(TokenStream& tokenStream) {
+    if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::LITERAL) {
 
-        TokenStream::Token literal = tokenStream->getNextToken();
-        this->codeReference = CodeReference({literal.line, literal.line}, {literal.start_index, literal.last_index}, {literal.start_index, literal.last_index}) ;
-        tokenStream->popNextToken();
+        TokenStream::Token literal = tokenStream.lookup();
+        this->codeReference = literal.getCodeReference();
+        tokenStream.nextToken();
     }
     else {
-        codeManager->printCompileError(tokenStream->getNextToken().line , tokenStream->getNextToken().start_index , tokenStream->getNextToken().last_index , "LITERAL") ;
-        isCompileError = false ;
+        codeManager->printCompileError(tokenStream.lookup().getCodeReference() , "LITERAL") ;
         return false ;
     }
     node_index = node_index_incrementer++ ;
@@ -837,7 +845,7 @@ ParseTreeNode::Type GenericToken::getType() const {
 GenericToken::GenericToken(CodeManager* codeManager , CodeReference codeReference) : TerminalNode(codeManager , codeReference) {
     node_index = node_index_incrementer++ ;
 }
-bool GenericToken::recursiveDecentParser() {
+bool GenericToken::recursiveDecentParser(TokenStream& /*tokenStream*/) {
     return true;
 }
 void GenericToken::accept(ParseTreeVisitor& parseTreeVisitor) const {

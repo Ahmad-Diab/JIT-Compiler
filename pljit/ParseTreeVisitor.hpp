@@ -1,5 +1,5 @@
-#ifndef PLJIT_PARSETREEVISITOR_H
-#define PLJIT_PARSETREEVISITOR_H
+#ifndef PLJIT_PARSETREEVISITOR_HPP
+#define PLJIT_PARSETREEVISITOR_HPP
 
 //---------------------------------------------------------------------------
 namespace jitcompiler{
@@ -51,4 +51,4 @@ class ParseTreeVisitor{
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
 
-#endif //PLJIT_PARSETREEVISITOR_H
+#endif //PLJIT_PARSETREEVISITOR_HPP

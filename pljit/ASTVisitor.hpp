@@ -1,5 +1,5 @@
-#ifndef PLJIT_ASTVISITOR_H
-#define PLJIT_ASTVISITOR_H
+#ifndef PLJIT_ASTVISITOR_HPP
+#define PLJIT_ASTVISITOR_HPP
 
 //---------------------------------------------------------------------------
 namespace jitcompiler {
@@ -27,4 +27,4 @@ class ASTVisitor {
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
 
-#endif //PLJIT_ASTVISITOR_H
+#endif //PLJIT_ASTVISITOR_HPP
