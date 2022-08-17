@@ -12,17 +12,19 @@ using namespace jitcompiler ;
 
 void foo1()
 {
-    string identifier = "volume";
+    string identifier = "a := 10";
     CodeManager manager(identifier) ;
     TokenStream lexicalAnalyzer(&manager);
     lexicalAnalyzer.compileCode() ;
-    PrimaryExpression primaryExpression(&manager) ;
-    if(!primaryExpression.recursiveDecentParser(lexicalAnalyzer))
-    {
-        cout << "error\n" ;
+    StatementList primaryExpression(&manager) ;
+    if(!primaryExpression.recursiveDecentParser(lexicalAnalyzer)) {
+        cout << manager.error_message() ;
     }
     else {
-        PrintVisitor<false> printVisitor ;
+        constexpr bool f = false ;
+//        constexpr bool f = true ;
+        PrintVisitor<f> printVisitor ;
+        printVisitor.reset() ;
         primaryExpression.accept(printVisitor) ;
         cout << printVisitor.getOutput()  ;
     }

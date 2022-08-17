@@ -57,7 +57,7 @@ namespace {
     }
 } // anonymous namespace
 
-void PrintASTVistor::visit(const FunctionAST& functionAst) {
+void PrintASTVistor::   visit(const FunctionAST& functionAst) {
     buf << '\t' <<  functionAst.getNodeID() << " [label=\"" << "Function" << "\"];\n" ;
 
     for(size_t index = 0 ; index < functionAst.statement_size() ; ++index) {

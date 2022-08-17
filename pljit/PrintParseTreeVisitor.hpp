@@ -10,7 +10,13 @@ namespace jitcompiler{
  * isLabeld-> true(for visualization) , false (for testing)
  */
 template<bool isLabeled>
-class PrintVisitor  : public ParseTreeVisitor{
+class PrintVisitor ;
+
+using TestPrintVisitor = PrintVisitor<false> ; // recommended for testing
+using VisualizePrintVisitor = PrintVisitor<true> ; // recommended for visualization in DOT format (Not readable)
+
+template<bool isLabeled>
+class PrintVisitor  : public ParseTreeVisitor {
     private:
     std::ostringstream buf ;
     public:
@@ -253,12 +259,12 @@ class PrintVisitor  : public ParseTreeVisitor{
                 {
                     if(isLabeled) {
                         buf << '\t' << curChild.getNodeId() << " [label=\""
-                            << "identifier"
+                            << "init-declarator"
                             << "\"];\n";
                         buf << '\t' << initDeclartorList.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
                     }
                     else {
-                        buf << '\t' << "init-declarator-list" << " -> " << "identifier" << ";\n";
+                        buf << '\t' << "init-declarator-list" << " -> " << "init-declarator" << ";\n";
 
                     }
                 }

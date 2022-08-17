@@ -5,7 +5,7 @@
 using namespace std;
 using namespace jitcompiler ;
 
-TEST(TestTokenStream , singleToken) {
+TEST(TestTokenStream , TestSingleToken) {
     constexpr array<string_view, 6> keywords = {"PARAM", "VAR", "CONST", "BEGIN", "END", "RETURN"};
     constexpr array<pair<string_view , TokenStream::TokenType>, 11> specialChars =
         {
@@ -28,63 +28,63 @@ TEST(TestTokenStream , singleToken) {
         CodeManager codeManager(cur) ;
         TokenStream lexicalAnalyzer(&codeManager) ;
         lexicalAnalyzer.compileCode() ;
-        ASSERT_TRUE(!codeManager.isCodeError()) ;
-        ASSERT_TRUE(!lexicalAnalyzer.isEmpty()) ;
+        EXPECT_TRUE(!codeManager.isCodeError()) ;
+        EXPECT_TRUE(!lexicalAnalyzer.isEmpty()) ;
         TokenStream::Token token = lexicalAnalyzer.nextToken() ;
-        ASSERT_TRUE(lexicalAnalyzer.isEmpty()) ;
+        EXPECT_TRUE(lexicalAnalyzer.isEmpty()) ;
         string_view line = codeManager.getCurrentLine(token.getCodeReference().getStartLineRange().first) ;
         size_t start_index = token.getCodeReference().getStartLineRange().second ;
         size_t last_index = token.getCodeReference().getEndLineRange().second ;
-        ASSERT_EQ(line.substr(start_index , last_index - start_index + 1) , cur) ;
-        ASSERT_EQ(TokenStream::TokenType::KEYWORD , token.getTokenType()) ;
+        EXPECT_EQ(line.substr(start_index , last_index - start_index + 1) , cur) ;
+        EXPECT_EQ(TokenStream::TokenType::KEYWORD , token.getTokenType()) ;
     }
     // special token
     for(const auto &[cur , type] : specialChars) {
         CodeManager codeManager(cur) ;
         TokenStream lexicalAnalyzer(&codeManager) ;
         lexicalAnalyzer.compileCode() ;
-        ASSERT_TRUE(!codeManager.isCodeError()) ;
-        ASSERT_TRUE(!lexicalAnalyzer.isEmpty()) ;
+        EXPECT_TRUE(!codeManager.isCodeError()) ;
+        EXPECT_TRUE(!lexicalAnalyzer.isEmpty()) ;
         TokenStream::Token token = lexicalAnalyzer.nextToken() ;
-        ASSERT_TRUE(lexicalAnalyzer.isEmpty()) ;
+        EXPECT_TRUE(lexicalAnalyzer.isEmpty()) ;
         string_view line = codeManager.getCurrentLine(token.getCodeReference().getStartLineRange().first) ;
         size_t start_index = token.getCodeReference().getStartLineRange().second ;
         size_t last_index = token.getCodeReference().getEndLineRange().second ;
-        ASSERT_EQ(line.substr(start_index , last_index - start_index + 1) , cur) ;
-        ASSERT_EQ(type , token.getTokenType()) ;
+        EXPECT_EQ(line.substr(start_index , last_index - start_index + 1) , cur) ;
+        EXPECT_EQ(type , token.getTokenType()) ;
     }
     // identifiers
     for(const auto &cur : identifiers) {
         CodeManager codeManager(cur) ;
         TokenStream lexicalAnalyzer(&codeManager) ;
         lexicalAnalyzer.compileCode() ;
-        ASSERT_TRUE(!codeManager.isCodeError()) ;
-        ASSERT_TRUE(!lexicalAnalyzer.isEmpty()) ;
+        EXPECT_TRUE(!codeManager.isCodeError()) ;
+        EXPECT_TRUE(!lexicalAnalyzer.isEmpty()) ;
         TokenStream::Token token = lexicalAnalyzer.nextToken() ;
-        ASSERT_TRUE(lexicalAnalyzer.isEmpty()) ;
+        EXPECT_TRUE(lexicalAnalyzer.isEmpty()) ;
         string_view line = codeManager.getCurrentLine(token.getCodeReference().getStartLineRange().first) ;
         size_t start_index = token.getCodeReference().getStartLineRange().second ;
         size_t last_index = token.getCodeReference().getEndLineRange().second ;
-        ASSERT_EQ(line.substr(start_index , last_index - start_index + 1) , cur) ;
-        ASSERT_EQ(TokenStream::TokenType::IDENTIFIER , token.getTokenType()) ;
+        EXPECT_EQ(line.substr(start_index , last_index - start_index + 1) , cur) ;
+        EXPECT_EQ(TokenStream::TokenType::IDENTIFIER , token.getTokenType()) ;
     }
     // literals
     for(const auto &cur : literals) {
         CodeManager codeManager(cur) ;
         TokenStream lexicalAnalyzer(&codeManager) ;
         lexicalAnalyzer.compileCode() ;
-        ASSERT_TRUE(!codeManager.isCodeError()) ;
-        ASSERT_TRUE(!lexicalAnalyzer.isEmpty()) ;
+        EXPECT_TRUE(!codeManager.isCodeError()) ;
+        EXPECT_TRUE(!lexicalAnalyzer.isEmpty()) ;
         TokenStream::Token token = lexicalAnalyzer.nextToken() ;
-        ASSERT_TRUE(lexicalAnalyzer.isEmpty()) ;
+        EXPECT_TRUE(lexicalAnalyzer.isEmpty()) ;
         string_view line = codeManager.getCurrentLine(token.getCodeReference().getStartLineRange().first) ;
         size_t start_index = token.getCodeReference().getStartLineRange().second ;
         size_t last_index = token.getCodeReference().getEndLineRange().second ;
-        ASSERT_EQ(line.substr(start_index , last_index - start_index + 1) , cur) ;
-        ASSERT_EQ(TokenStream::TokenType::LITERAL , token.getTokenType()) ;
+        EXPECT_EQ(line.substr(start_index , last_index - start_index + 1) , cur) ;
+        EXPECT_EQ(TokenStream::TokenType::LITERAL , token.getTokenType()) ;
     }
 }
-TEST(TestTokenStream , errorMessages){
+TEST(TestTokenStream , TestErrorMessages){
     // invalid character
     {
         string source_code1 = "1213133?-29212\n";
@@ -94,8 +94,8 @@ TEST(TestTokenStream , errorMessages){
         CodeManager codeManager(source_code1) ;
         TokenStream lexicalAnalyzer(&codeManager) ;
         lexicalAnalyzer.compileCode() ;
-        ASSERT_TRUE(codeManager.isCodeError()) ;
-        ASSERT_EQ(errorMessage , codeManager.error_message()) ;
+        EXPECT_TRUE(codeManager.isCodeError()) ;
+        EXPECT_EQ(errorMessage , codeManager.error_message()) ;
     }
     // invalid character
     {
@@ -112,8 +112,8 @@ TEST(TestTokenStream , errorMessages){
         CodeManager codeManager(source_code2) ;
         TokenStream lexicalAnalyzer(&codeManager) ;
         lexicalAnalyzer.compileCode() ;
-        ASSERT_TRUE(codeManager.isCodeError()) ;
-        ASSERT_EQ(errorMessage , codeManager.error_message()) ;
+        EXPECT_TRUE(codeManager.isCodeError()) ;
+        EXPECT_EQ(errorMessage , codeManager.error_message()) ;
     }
     // invalid character
     {
@@ -130,8 +130,8 @@ TEST(TestTokenStream , errorMessages){
         CodeManager codeManager(source_code3) ;
         TokenStream lexicalAnalyzer(&codeManager) ;
         lexicalAnalyzer.compileCode() ;
-        ASSERT_TRUE(codeManager.isCodeError()) ;
-        ASSERT_EQ(errorMessage , codeManager.error_message()) ;
+        EXPECT_TRUE(codeManager.isCodeError()) ;
+        EXPECT_EQ(errorMessage , codeManager.error_message()) ;
     }
     // concatenate literal with identifier
     {
@@ -142,12 +142,12 @@ TEST(TestTokenStream , errorMessages){
         CodeManager codeManager(source_code4) ;
         TokenStream lexicalAnalyzer(&codeManager) ;
         lexicalAnalyzer.compileCode() ;
-        ASSERT_TRUE(codeManager.isCodeError()) ;
-        ASSERT_EQ(errorMessage , codeManager.error_message()) ;
+        EXPECT_TRUE(codeManager.isCodeError()) ;
+        EXPECT_EQ(errorMessage , codeManager.error_message()) ;
     }
 
 }
-TEST(TestTokenStream , actualCode) {
+TEST(TestTokenStream , TestActualCode) {
     {
         // compile error however it will pass lexical analysis
         string source_code_1 = "PARAM length, width;\n"
@@ -183,21 +183,21 @@ TEST(TestTokenStream , actualCode) {
         CodeManager manager(source_code_1) ;
         TokenStream lexicalAnalyzer(&manager) ;
         lexicalAnalyzer.compileCode() ;
-        ASSERT_TRUE(!manager.isCodeError()) ;
-        ASSERT_TRUE(!lexicalAnalyzer.isEmpty()) ;
+        EXPECT_TRUE(!manager.isCodeError()) ;
+        EXPECT_TRUE(!lexicalAnalyzer.isEmpty()) ;
         size_t tokenIndex = 0 ;
         while(!lexicalAnalyzer.isEmpty()){
-            ASSERT_LT(tokenIndex , tokens.size()) ;
+            EXPECT_LT(tokenIndex , tokens.size()) ;
             TokenStream::Token token = lexicalAnalyzer.lookup() ;
             string_view line = manager.getCurrentLine(token.getCodeReference().getStartLineRange().first) ;
             size_t start_index = token.getCodeReference().getStartLineRange().second ;
             size_t last_index = token.getCodeReference().getEndLineRange().second ;
 
-            ASSERT_EQ(tokens[tokenIndex].first , line.substr(start_index , last_index - start_index + 1));
-            ASSERT_EQ(tokens[tokenIndex].second , token.getTokenType());
+            EXPECT_EQ(tokens[tokenIndex].first , line.substr(start_index , last_index - start_index + 1));
+            EXPECT_EQ(tokens[tokenIndex].second , token.getTokenType());
             lexicalAnalyzer.nextToken() ;
             tokenIndex++ ;
         }
-        ASSERT_EQ(tokenIndex , tokens.size()) ;
+        EXPECT_EQ(tokenIndex , tokens.size()) ;
     }
 }

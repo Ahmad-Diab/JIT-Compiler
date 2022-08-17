@@ -627,10 +627,8 @@ bool MultiplicativeExpression::recursiveDecentParser(TokenStream& tokenStream) {
         unique_ptr<UnaryExpression> unaryExpression = make_unique<UnaryExpression>(codeManager);
         if (unaryExpression->recursiveDecentParser(tokenStream))
             children.emplace_back(move(unaryExpression)) ;
-        else {
-             // TODO error handling ;
+        else
             return false ;
-        }
     }
     {
         if(!tokenStream.isEmpty() && (tokenStream.lookup().getTokenType() == TokenStream::TokenType::MULTIPLY_OPERATOR || tokenStream.lookup().getTokenType() == TokenStream::TokenType::DIVIDE_OPERATOR))
@@ -736,18 +734,16 @@ bool PrimaryExpression::recursiveDecentParser(TokenStream& tokenStream) {
         if(identifier->recursiveDecentParser(tokenStream))
             children.emplace_back(move(identifier)) ;
         else
-        {
             return false ;
-        }
+
     }
     else if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::LITERAL)
     {
         unique_ptr<Literal> literal = make_unique<Literal>(codeManager ) ;
         if(literal->recursiveDecentParser(tokenStream))
             children.emplace_back(move(literal)) ;
-        else {
+        else
             return false ;
-        }
     }
     else if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::OPEN_BRACKET)
     {
@@ -761,10 +757,9 @@ bool PrimaryExpression::recursiveDecentParser(TokenStream& tokenStream) {
             unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager ) ;
             if(additiveExpression->recursiveDecentParser(tokenStream))
                 children.emplace_back(move(additiveExpression)) ;
-            else {
-                 // TODO error handling ;
+            else
                 return false ;
-            }
+
         }
         {
             if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::CLOSE_BRACKET)
@@ -776,14 +771,12 @@ bool PrimaryExpression::recursiveDecentParser(TokenStream& tokenStream) {
             }
             else {
                 codeManager->printCompileError(tokenStream.lookup().getCodeReference() , ")") ;
-                 // TODO error handling ;
                 return false ;
             }
         }
     }
     else {
         codeManager->printCompileError(tokenStream.lookup().getCodeReference() , "IDENTIFIER , LITERAL or Open Bracket") ;
-         // TODO error handling ;
         return false ;
     }
     node_index = node_index_incrementer++ ;

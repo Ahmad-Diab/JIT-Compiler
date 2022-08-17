@@ -23,7 +23,7 @@ class ParseTreeNode {
      static size_t node_index_incrementer ;
 public:
     /// Types of ParseTreeNodes
-    enum class Type{
+    enum class Type {
         /// Declaration types
         FUNCTION_DECLARATION ,
         PARAMETER_DECLARATION ,
