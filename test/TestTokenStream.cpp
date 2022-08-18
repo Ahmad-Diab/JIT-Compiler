@@ -88,7 +88,7 @@ TEST(TestTokenStream , TestErrorMessages){
     // invalid character
     {
         string source_code1 = "1213133?-29212\n";
-        string errorMessage = "1:8: error: invalid token \"?\"\n"
+        string errorMessage = "1:8: error: unexpected token \"?\"\n"
                               "1213133?-29212\n"
                               "       ^\n" ;
         CodeManager codeManager(source_code1) ;
@@ -106,7 +106,7 @@ TEST(TestTokenStream , TestErrorMessages){
                               "volume := width * height * depth;\n"
                               "RETURN density * volume\n"
                               "END.";
-        string errorMessage = "2:8: error: invalid token \"#\"\n"
+        string errorMessage = "2:8: error: unexpected token \"#\"\n"
                               "VAR vol#me\n"
                               "       ^\n" ;
         CodeManager codeManager(source_code2) ;
@@ -124,7 +124,7 @@ TEST(TestTokenStream , TestErrorMessages){
                               "volume := width * height * depth;\n"
                               "RETURN density * volume\n"
                               "END@\n";
-        string errorMessage = "7:4: error: invalid token \"@\"\n"
+        string errorMessage = "7:4: error: unexpected token \"@\"\n"
                               "END@\n"
                               "   ^\n" ;
         CodeManager codeManager(source_code3) ;
@@ -136,7 +136,7 @@ TEST(TestTokenStream , TestErrorMessages){
     // concatenate literal with identifier
     {
         string source_code4 = ":=,.;123a" ;
-        string errorMessage = "1:6: error: invalid token \"123a\"\n"
+        string errorMessage = "1:6: error: unexpected token \"123a\"\n"
                               ":=,.;123a\n"
                               "     ^~~~\n" ;
         CodeManager codeManager(source_code4) ;

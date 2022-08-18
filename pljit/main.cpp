@@ -10,27 +10,28 @@ using namespace std;
 using namespace jitcompiler ;
 //---------------------------------------------------------------------------
 
+
+
 void foo1()
 {
-    string identifier = "a := 10";
+    string identifier = "BEGIN RETURN 1 END";
     CodeManager manager(identifier) ;
     TokenStream lexicalAnalyzer(&manager);
     lexicalAnalyzer.compileCode() ;
-    StatementList primaryExpression(&manager) ;
-    if(!primaryExpression.recursiveDecentParser(lexicalAnalyzer)) {
-        cout << manager.error_message() ;
-    }
+    assert(!manager.isCodeError());
+    FunctionDeclaration node(&manager) ;
+    if(!node.compileCode(lexicalAnalyzer)) { cout << manager.error_message() ;}
     else {
         constexpr bool f = false ;
-//        constexpr bool f = true ;
         PrintVisitor<f> printVisitor ;
         printVisitor.reset() ;
-        primaryExpression.accept(printVisitor) ;
+        node.accept(printVisitor) ;
         cout << printVisitor.getOutput()  ;
     }
 }
 
 int main() {
+
     foo1() ;
 //    string source_code1 = "PARAM  d;\n"
 //                         "VAR volume;\n"

@@ -14,9 +14,8 @@ class ParseTreeNode {
     protected:
     // TODO codeReference for all non terminal nodes
     //---------------------------------------------------------------------------
-     CodeReference codeReference ; // TODO supposed to be in Terminal node only
+     CodeReference codeReference ;
      CodeManager* codeManager ;
-//     TokenStream* tokenStream ;
      //---------------------------------------------------------------------------
 
      size_t node_index ;
@@ -54,10 +53,11 @@ public:
 
     virtual bool recursiveDecentParser(TokenStream& tokenStream) = 0 ;
 
-
     virtual void accept(ParseTreeVisitor& parseTreeVisitor) const  = 0 ;
 
     size_t getNodeId() const ;
+
+    bool compileCode(TokenStream& tokenStream) ;
 
     CodeReference getReference() const ;
 
@@ -99,6 +99,7 @@ class FunctionDeclaration final : public NonTerminalNode {
     bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
+
 };
 //---------------------------------------------------------------------------
 class ParameterDeclaration final : public NonTerminalNode {
@@ -173,7 +174,6 @@ class InitDeclartor final : public NonTerminalNode {
     bool recursiveDecentParser(TokenStream& tokenStream) override;
 
     void accept(ParseTreeVisitor& parseTreeVisitor) const override ;
-
 };
 //---------------------------------------------------------------------------
 class CompoundStatement final : public NonTerminalNode {
