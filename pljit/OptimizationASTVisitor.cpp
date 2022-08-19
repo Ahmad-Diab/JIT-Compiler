@@ -8,6 +8,7 @@ namespace jitcompiler {
 //---------------------------------------------------------------------------
 
 optional<int64_t> OptimizationVisitor::visitOptimization(FunctionAST& functionAst) {
+    evaluationContext = EvaluationContext(functionAst.getSymbolTable()) ;
     for(size_t statement_index = 0 ; statement_index < functionAst.statement_size() ; statement_index++) {
         StatementAST& statementAst = *functionAst.children[statement_index] ;
         optional<int64_t> result = statementAst.acceptOptimization(*this) ;

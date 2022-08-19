@@ -62,7 +62,7 @@ class Pljit {
                 }
                 FunctionAST* functionAst = semanticAnalyzer[curIndex].get() ;
                 EvaluationContext evalOptimization(semanticAnalyzer[curIndex]->getSymbolTable()) ;
-                OptimizationVisitor optimizationVisitor(evalOptimization) ;
+                OptimizationVisitor optimizationVisitor ;
                 functionAst->acceptOptimization(optimizationVisitor) ;
                 compileTrigger[curIndex] = true ;
                 EvaluationContext evaluationContext(parameter_list , semanticAnalyzer[curIndex]->getSymbolTable()) ;

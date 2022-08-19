@@ -25,10 +25,10 @@ int main() {
         "BEGIN\n"
         "x := (xa - xb) * (xa - xb);\n"
         "y := (ya - yb) * (ya - yb);\n"
-        "d := x + y\n"
+        "d := x + y;\n"
+        "RETURN d;\n"
+        "RETURN x + y\n"
         "END.\n" ;
-        ;
-
     CodeManager manager(identifier) ;
     TokenStream lexicalAnalyzer(&manager);
     lexicalAnalyzer.compileCode() ;
@@ -42,7 +42,9 @@ int main() {
         cout << manager.error_message() ;
     }
     else {
-        constexpr bool f = true ;
+        OptimizationVisitor optimizationVisitor ;
+        functionAst.acceptOptimization(optimizationVisitor) ;
+        constexpr bool f = false ;
         PrintASTVisitor<f> printVisitor ;
         printVisitor.reset() ;
         functionAst.accept(printVisitor) ;

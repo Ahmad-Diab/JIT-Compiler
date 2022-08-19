@@ -23,7 +23,6 @@ class OptimizationVisitor {
 
     public:
     OptimizationVisitor() = default;
-    explicit OptimizationVisitor(EvaluationContext &evaluationContext) : evaluationContext(evaluationContext) {}
 
     std::optional<int64_t> visitOptimization(FunctionAST& functionAst) ;
     std::optional<int64_t> visitOptimization(ReturnStatementAST& returnStatementAst)  ;
