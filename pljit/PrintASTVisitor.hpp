@@ -2,6 +2,7 @@
 #define PLJIT_PRINTASTVISITOR_HPP
 
 #include "ASTVisitor.hpp"
+#include "AST.hpp"
 #include <sstream>
 
 //---------------------------------------------------------------------------
