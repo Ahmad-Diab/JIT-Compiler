@@ -75,7 +75,8 @@ namespace {
             return analyzeExpression(unaryExpression , symbolTable , initializedVariables) ;
 
         CodeManager* codeManager = multiplicativeExpression.getManager() ;
-        char op = (static_cast<const GenericToken&>(multiplicativeExpression.getChild(1))).print_token()[0] ;
+        const GenericToken& tokenOperator = static_cast<const GenericToken&>(multiplicativeExpression.getChild(1)) ;
+        char op = tokenOperator.print_token()[0] ;
         const MultiplicativeExpression& anotherMultiplicativeExpression = static_cast<const MultiplicativeExpression&>(multiplicativeExpression.getChild(2)) ;
         BinaryExpressionAST::BinaryType type = op == '*' ? BinaryExpressionAST::BinaryType::MULTIPLY :
                                                            BinaryExpressionAST::BinaryType::DIVIDE;
@@ -90,7 +91,7 @@ namespace {
                                                     (
                                                         codeManager ,
                                                         type , move(leftChild)
-                                                         ,  move(rightChild)
+                                                         ,  move(rightChild) , tokenOperator.getReference()
                                                     ) ;
         return binaryExpressionAst ;
     }
@@ -438,7 +439,7 @@ ReturnStatementAST::ReturnStatementAST(CodeManager* manager, std::unique_ptr<Exp
     this->input = move(input) ;
 }
 const ExpressionAST& ReturnStatementAST::getInput() const {
-    return *input.get() ;
+    return *input ;
 }
 std::unique_ptr<ExpressionAST> ReturnStatementAST::releaseInput() {
     unique_ptr<ExpressionAST> node = move(input) ;
@@ -495,7 +496,11 @@ std::optional<int64_t> BinaryExpressionAST::evaluate(EvaluationContext& evaluati
         case BinaryType::MULTIPLY: return leftResult.value() * rightResult.value();
         case BinaryType::DIVIDE:
         {
-            // TODO error for division by zero
+            if(rightResult.value() == 0)
+            {
+                codeManager->printDivZeroError(codeReference);
+                return nullopt ;
+            }
             return leftResult.value() / rightResult.value() ;
         };
     }
@@ -503,6 +508,9 @@ std::optional<int64_t> BinaryExpressionAST::evaluate(EvaluationContext& evaluati
 }
 std::optional<int64_t> BinaryExpressionAST::acceptOptimization(OptimizationVisitor& astVisitor) {
     return astVisitor.visitOptimization(*this) ;
+}
+BinaryExpressionAST::BinaryExpressionAST(CodeManager* manager, BinaryExpressionAST::BinaryType type, std::unique_ptr<ExpressionAST> left, std::unique_ptr<ExpressionAST> right, CodeReference reference) : BinaryExpressionAST(manager , type , move(left) , move(right)){
+    codeReference = reference ;
 }
 
 ASTNode::Type UnaryExpressionAST::getType() const {

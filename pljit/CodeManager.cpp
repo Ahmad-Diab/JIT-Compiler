@@ -57,6 +57,26 @@ void CodeManager::printCompileError(CodeReference codeReference , std::string_vi
     }
     compileErrorStream << '\n' ;
 }
+void CodeManager::printDivZeroError(CodeReference codeReference) {
+    assert(codeReference.getStartLineRange().first == codeReference.getEndLineRange().first) ;
+    size_t currentLine = codeReference.getStartLineRange().first ;
+    size_t start_index = codeReference.getStartLineRange().second ;
+    size_t last_index = codeReference.getEndLineRange().second ;
+    assert(currentLine < code_lines.size()) ;
+    errorOccurred = true ;
+    runtimeErrorStream << currentLine + 1 << ":" << start_index + 1 << ": Runtime Error: ";
+    runtimeErrorStream << "Divide by Zero" << '\n';
+
+    runtimeErrorStream << code_lines[currentLine] << '\n' ;
+    runtimeErrorStream.width(static_cast<uint32_t>(start_index + 1)) ;
+    runtimeErrorStream << '^' ;
+    while (start_index < last_index) {
+        runtimeErrorStream << "~" ;
+        start_index ++ ;
+    }
+    runtimeErrorStream << '\n' ;
+}
+
 void CodeManager::printSemanticError(CodeReference codeReference, std::string_view message) {
     assert(codeReference.getStartLineRange().first == codeReference.getEndLineRange().first) ;
     size_t currentLine = codeReference.getStartLineRange().first ;
@@ -130,7 +150,6 @@ std::string CodeManager::runtimeErrorMessage() {
     runtimeErrorStream.clear() ;
     return res ;
 }
-
 
 } // namespace jitcompiler
 //---------------------------------------------------------------------------

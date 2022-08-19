@@ -1,7 +1,7 @@
 set(TEST_SOURCES
     # add your source files here
     Tester.cpp
-        TestTokenStream.cpp TestParseTree.cpp TestAST.cpp)
+        TestTokenStream.cpp TestParseTree.cpp TestAST.cpp TestEvaluation.cpp)
 
 add_executable(tester ${TEST_SOURCES})
 target_link_libraries(tester PUBLIC

@@ -30,11 +30,13 @@ class CodeManager
 
     void printSemanticError(CodeReference codeReference , std::string_view message = "") ;
 
+    void printDivZeroError(CodeReference codeReference) ;
+
     bool isCodeError() const ;
 
     std::string error_message() const ;
 
-    std::string runtimeErrorMessage() ;
+    std::string runtimeErrorMessage();
 };
 //---------------------------------------------------------------------------
 } //namespace jitcompiler

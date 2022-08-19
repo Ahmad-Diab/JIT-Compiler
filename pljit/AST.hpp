@@ -208,6 +208,8 @@ class BinaryExpressionAST final : public ExpressionAST {
         (CodeManager* manager , BinaryType type , std::unique_ptr<ExpressionAST> left , std::unique_ptr<ExpressionAST> right) ;
     explicit BinaryExpressionAST
         (std::unique_ptr<ExpressionAST> left , std::unique_ptr<ExpressionAST> right) : leftExpression(move(left)) , rightExpression(move(right)) {}
+    explicit BinaryExpressionAST
+        (CodeManager* manager , BinaryType type , std::unique_ptr<ExpressionAST> left , std::unique_ptr<ExpressionAST> right , CodeReference reference) ;
 
     BinaryType getBinaryType() const ;
 
