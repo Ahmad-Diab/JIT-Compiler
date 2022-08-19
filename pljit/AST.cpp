@@ -19,13 +19,24 @@ namespace {
         }
         return value ;
     }
-    unique_ptr<ExpressionAST> analyzeExpression(const AdditiveExpression& additiveExpression) ;
 
-    unique_ptr<ExpressionAST> analyzeExpression(const PrimaryExpression& primaryExpression)
+    unique_ptr<ExpressionAST> analyzeExpression(const AdditiveExpression& additiveExpression , const SymbolTable& symbolTable , const unordered_set<string_view> &initializedVariables) ;
+
+    unique_ptr<ExpressionAST> analyzeExpression(const PrimaryExpression& primaryExpression , const SymbolTable& symbolTable , const unordered_set<string_view> &initializedVariables)
     {
         if(primaryExpression.getChild(0).getType() == ParseTreeNode::Type::IDENTIFIER) {
 
             const Identifier& identifier = static_cast<const Identifier&>(primaryExpression.getChild(0)) ;
+            CodeManager* manager = identifier.getManager() ;
+            if(!symbolTable.isDeclared(identifier.print_token())) {
+                manager->printSemanticError(identifier.getReference() , "Undeclared Identifier") ;
+                return nullptr;
+            }
+            else if(symbolTable.isVariable(identifier.print_token()) && !initializedVariables.contains(identifier.print_token()))
+            {
+                manager->printSemanticError(identifier.getReference() , "Uninitialized Identifier") ;
+                return nullptr ;
+            }
             return make_unique<IdentifierAST>(identifier.getManager() , identifier.getReference()) ;
         }
         else if(primaryExpression.getChild(0).getType() == ParseTreeNode::Type::LITERAL) {
@@ -35,9 +46,9 @@ namespace {
 
         }
         const AdditiveExpression& additiveExpression = static_cast<const AdditiveExpression&>(primaryExpression.getChild(1)) ;
-        return analyzeExpression(additiveExpression) ;
+        return analyzeExpression(additiveExpression , symbolTable , initializedVariables) ;
     }
-    unique_ptr<ExpressionAST> analyzeExpression(const UnaryExpression& unaryExpression)
+    unique_ptr<ExpressionAST> analyzeExpression(const UnaryExpression& unaryExpression , const SymbolTable& symbolTable , const unordered_set<string_view> &initializedVariables)
     {
         if(unaryExpression.num_children() == 2)
         {
@@ -46,81 +57,117 @@ namespace {
             const PrimaryExpression& primaryExpression = static_cast<const PrimaryExpression&>(unaryExpression.getChild(1));
             UnaryExpressionAST::UnaryType type = op == '+' ? UnaryExpressionAST::UnaryType::PLUS :
                                                              UnaryExpressionAST::UnaryType::MINUS;
-
+            auto child = analyzeExpression(primaryExpression , symbolTable , initializedVariables) ;
+            if(child == nullptr)
+                return nullptr ;
             return make_unique<UnaryExpressionAST>(
                 codeManager , unaryExpression.getReference() , type ,
-                analyzeExpression(primaryExpression)
-                                                   ) ;
+                move(child)) ;
         }
         const PrimaryExpression& primaryExpression = static_cast<const PrimaryExpression&>(unaryExpression.getChild(0));
-        return analyzeExpression(primaryExpression) ;
+        return analyzeExpression(primaryExpression , symbolTable , initializedVariables) ;
     }
 
-    unique_ptr<ExpressionAST> analyzeExpression(const MultiplicativeExpression& multiplicativeExpression) {
+    unique_ptr<ExpressionAST> analyzeExpression(const MultiplicativeExpression& multiplicativeExpression ,const SymbolTable& symbolTable , const unordered_set<string_view> &initializedVariables) {
         const UnaryExpression& unaryExpression = static_cast<const UnaryExpression&>(multiplicativeExpression.getChild(0)) ;
 
         if(multiplicativeExpression.num_children() == 1)
-            return analyzeExpression(unaryExpression) ;
+            return analyzeExpression(unaryExpression , symbolTable , initializedVariables) ;
 
         CodeManager* codeManager = multiplicativeExpression.getManager() ;
         char op = (static_cast<const GenericToken&>(multiplicativeExpression.getChild(1))).print_token()[0] ;
         const MultiplicativeExpression& anotherMultiplicativeExpression = static_cast<const MultiplicativeExpression&>(multiplicativeExpression.getChild(2)) ;
         BinaryExpressionAST::BinaryType type = op == '*' ? BinaryExpressionAST::BinaryType::MULTIPLY :
                                                            BinaryExpressionAST::BinaryType::DIVIDE;
+        auto leftChild = analyzeExpression(unaryExpression , symbolTable , initializedVariables) ;
+        if(leftChild == nullptr)
+            return nullptr ;
+        auto rightChild = analyzeExpression(anotherMultiplicativeExpression , symbolTable , initializedVariables) ;
+        if(rightChild == nullptr)
+            return nullptr ;
+
         unique_ptr<BinaryExpressionAST> binaryExpressionAst = make_unique<BinaryExpressionAST>
                                                     (
                                                         codeManager ,
-                                                        type ,
-                                                        analyzeExpression(unaryExpression) ,
-                                                        analyzeExpression(anotherMultiplicativeExpression)
-                                                    );
+                                                        type , move(leftChild)
+                                                         ,  move(rightChild)
+                                                    ) ;
         return binaryExpressionAst ;
     }
-    unique_ptr<ExpressionAST> analyzeExpression(const AdditiveExpression& additiveExpression)
+    unique_ptr<ExpressionAST> analyzeExpression(const AdditiveExpression& additiveExpression , const SymbolTable& symbolTable , const unordered_set<string_view> &initializedVariables)
     {
         const MultiplicativeExpression& multiplicativeExpression = static_cast<const MultiplicativeExpression&>(additiveExpression.getChild(0)) ;
 
         if(additiveExpression.num_children() == 1)
-            return analyzeExpression(multiplicativeExpression) ;
+            return analyzeExpression(multiplicativeExpression , symbolTable ,initializedVariables) ;
 
         CodeManager* codeManager = additiveExpression.getManager() ;
         char op = (static_cast<const GenericToken&>(additiveExpression.getChild(1))).print_token()[0] ;
         const AdditiveExpression& anotherAdditiveExpression = static_cast<const AdditiveExpression&>(additiveExpression.getChild(2)) ;
         BinaryExpressionAST::BinaryType type = op == '+' ? BinaryExpressionAST::BinaryType::PLUS :
                                                            BinaryExpressionAST::BinaryType::MINUS;
+        auto leftChild = analyzeExpression(multiplicativeExpression , symbolTable , initializedVariables)  ;
+        if(leftChild == nullptr)
+            return nullptr ;
+        auto rightChild = analyzeExpression(anotherAdditiveExpression , symbolTable , initializedVariables) ;
+        if(rightChild == nullptr)
+            return nullptr ;
+
         unique_ptr<BinaryExpressionAST> binaryExpressionAst = make_unique<BinaryExpressionAST>(
             codeManager ,
             type ,
-            analyzeExpression(multiplicativeExpression) ,
-            analyzeExpression(anotherAdditiveExpression)
+            move(leftChild) ,
+            move(rightChild)
         ) ;
         return binaryExpressionAst ;
     }
-    unique_ptr<StatementAST> analyzeStatement(const Statement& parseTreeNode)
+    unique_ptr<StatementAST> analyzeStatement(const Statement& parseTreeNode , const SymbolTable& symbolTable, unordered_set<string_view> &initializedVariables)
     {
         CodeManager* codeManager = parseTreeNode.getManager() ;
         if(parseTreeNode.getChild(0).getType() == ParseTreeNode::Type::ASSIGNMENT_EXPRESSION)
         {
             const AssignmentExpression& assignmentExpression = static_cast<const AssignmentExpression&>(parseTreeNode.getChild(0)) ;
             const Identifier& identifier = static_cast<const Identifier&>(assignmentExpression.getChild(0)) ;
+            if(!symbolTable.isDeclared(identifier.print_token()))
+            {
+                identifier.getManager()->printSemanticError(identifier.getReference() , "Undeclared Identifier") ;
+                return nullptr ;
+            }
+            else if(symbolTable.isConstant(identifier.print_token()))
+            {
+                identifier.getManager()->printSemanticError(identifier.getReference() , "Constant Assignment") ;
+                return nullptr ;
+            }
+
             const AdditiveExpression& additiveExpression = static_cast<const AdditiveExpression&>(assignmentExpression.getChild(2)) ;
+            auto rightExpression = analyzeExpression(additiveExpression , symbolTable , initializedVariables) ;
+            if(rightExpression == nullptr)
+                return nullptr ;
             unique_ptr<AssignmentStatementAST> statementAst = make_unique<AssignmentStatementAST>
                 (
                     codeManager ,
                     make_unique<IdentifierAST>(identifier.getManager() , identifier.getReference()) ,
-                    analyzeExpression(additiveExpression)
+                    move(rightExpression)
                  )
             ;
+            if(symbolTable.isVariable(identifier.print_token()))
+                initializedVariables.insert(identifier.print_token()) ;
+
             return statementAst ;
         }
+
         const AdditiveExpression& additiveExpression = static_cast<const AdditiveExpression&>(parseTreeNode.getChild(1)) ;
+        auto child = analyzeExpression(additiveExpression , symbolTable , initializedVariables) ;
+        if(child == nullptr)
+            return nullptr ;
         unique_ptr<ReturnStatementAST> statementAst = make_unique<ReturnStatementAST>
             (
                 codeManager ,
-                analyzeExpression(additiveExpression)
+                move(child)
                 );
         return statementAst ;
     }
+
 } // anonymous namespace
 
 size_t ASTNode :: node_index_incrementer {0};
@@ -137,7 +184,7 @@ bool SymbolTable::addAttributes(const ParameterDeclaration& declaration) {
                 parameter_index++ ;
             }
             else {
-                // TODO compile error
+                codeManager->printSemanticError(curChild.getReference() , "Already declared") ;
                 isCompiled = false ;
                 return false ;
             }
@@ -155,7 +202,7 @@ bool SymbolTable::addAttributes(const VariableDeclaration& declaration) {
             if(!this->isDeclared(curChild.print_token()))
                 this->insert(curChild.print_token() , AttributeType::VARIABLE, curChild.getReference() , variable_index++ , nullopt) ;
             else {
-                // TODO compiler error
+                codeManager->printSemanticError(curChild.getReference() , "Already declared") ;
                 isCompiled = false ;
                 return false ;
             }
@@ -178,7 +225,7 @@ bool SymbolTable::addAttributes(const ConstantDeclaration& declaration) {
                 constant_index++ ;
             }
             else {
-                // TODO compile error
+                codeManager->printSemanticError(curChild.getReference() , "Already declared") ;
                 isCompiled = false ;
                 return false ;
             }
@@ -186,8 +233,9 @@ bool SymbolTable::addAttributes(const ConstantDeclaration& declaration) {
     }
     return true ;
 }
-SymbolTable::SymbolTable(const FunctionDeclaration& functionDeclaration) {
-    for(size_t index = 0 ; index < functionDeclaration.num_children() ; ++index) {
+SymbolTable::SymbolTable(CodeManager* codeManager , const FunctionDeclaration& functionDeclaration) {
+    this->codeManager = codeManager ;
+    for(size_t index = 0 ; isCompiled  && index < functionDeclaration.num_children(); ++index) {
         const ParseTreeNode& curNode = functionDeclaration.getChild(index) ;
         if(curNode.getType() == ParseTreeNode::Type::PARAMETER_DECLARATION)
         {
@@ -198,6 +246,7 @@ SymbolTable::SymbolTable(const FunctionDeclaration& functionDeclaration) {
         {
             const VariableDeclaration& declaration = static_cast<const VariableDeclaration&>(curNode) ;
             isCompiled &= addAttributes(declaration) ;
+
         }
         else if(curNode.getType() == ParseTreeNode::Type::CONSTANT_DECLARATION)
         {
@@ -212,8 +261,11 @@ bool SymbolTable::isDeclared(std::string_view identifier) const {
             || tableIdentifier[CONSTANT].find(identifier) != tableIdentifier[CONSTANT].end() ;
 }
 
-bool SymbolTable::isConstant(std::string_view identifier)  {
+bool SymbolTable::isConstant(std::string_view identifier) const {
     return  tableIdentifier[CONSTANT].find(identifier) != tableIdentifier[CONSTANT].end() ;
+}
+bool SymbolTable::isVariable(std::string_view identifier) const {
+    return  tableIdentifier[VARIABLE].find(identifier) != tableIdentifier[VARIABLE].end() ;
 }
 bool SymbolTable::isComplied() const {
     return isCompiled ;
@@ -230,24 +282,31 @@ array<unordered_map<std::string_view, std::tuple<CodeReference, size_t, std::opt
 ASTNode::Type FunctionAST::getType() const{
     return ASTNode::Type::FUNCTION ;
 }
-FunctionAST::FunctionAST(std::unique_ptr<FunctionDeclaration> &functionDeclaration , CodeManager* manager) {
+
+FunctionAST::FunctionAST(CodeManager* manager) {
     this->codeManager = manager ;
     node_index = node_index_incrementer++ ;
 
-    symbolTable = make_unique<SymbolTable>(*functionDeclaration) ;
-    size_t compound_index = 0 ;
-    for(size_t index = 0 ; index < functionDeclaration->num_children() ; index++)
+}
+bool FunctionAST::compileCode(const FunctionDeclaration& functionDeclaration) {
+    symbolTable = make_unique<SymbolTable>(codeManager , functionDeclaration) ;
+    if(!symbolTable->isComplied())
+        return false ;
+    optional<size_t> compound_index ;
+    for(size_t index = 0 ; index < functionDeclaration.num_children() ; index++)
     {
-        const ParseTreeNode& curChild = functionDeclaration->getChild(index) ;
+        const ParseTreeNode& curChild = functionDeclaration.getChild(index) ;
         if(curChild.getType() == ParseTreeNode::Type::COMPOUND_STATEMENT)
         {
             compound_index = index ;
             break ;
         }
     }
-    const CompoundStatement& compoundStatement = static_cast<const CompoundStatement&>(functionDeclaration->getChild(compound_index));
+    assert(compound_index.has_value()) ;
+    const CompoundStatement& compoundStatement = static_cast<const CompoundStatement&>(functionDeclaration.getChild(compound_index.value()));
     const StatementList& statementList = static_cast<const StatementList&>(compoundStatement.getChild(1));
     unordered_set<string_view> initializedVariables ; // TODO Handling uninitialized variables
+    CodeReference endReference = compoundStatement.getChild(2).getReference();
     bool returnStatementTriggered = false ;
     for(size_t statement_index = 0 ; statement_index < statementList.num_children() ; statement_index++)
     {
@@ -255,7 +314,10 @@ FunctionAST::FunctionAST(std::unique_ptr<FunctionDeclaration> &functionDeclarati
         if(curChild .getType() == ParseTreeNode::Type::STATEMENT)
         {
             const Statement &statement = static_cast<const Statement&>(statementList.getChild(statement_index));
-            children.emplace_back(analyzeStatement(statement)) ;
+            auto child = analyzeStatement(statement , *symbolTable , initializedVariables) ;
+            if(child == nullptr)
+                return false ;
+            children.emplace_back(move(child)) ;
             if(children.front().get()->getType() == ASTNode::Type::RETURN_STATEMENT)
                 returnStatementTriggered = true ;
         }
@@ -263,9 +325,12 @@ FunctionAST::FunctionAST(std::unique_ptr<FunctionDeclaration> &functionDeclarati
     if(!returnStatementTriggered)
     {
         // TODO missing return statement ;
-//        manager->
+        codeManager->printSemanticError(endReference , "Missing Return Statement") ;
+        return false ;
     }
+    return true;
 }
+
 const StatementAST& FunctionAST::getStatement(size_t index) const {
     return *children[index] ;
 }
@@ -301,6 +366,7 @@ std::optional<int64_t> FunctionAST::evaluate(EvaluationContext& evaluationContex
 std::optional<int64_t> FunctionAST::acceptOptimization(OptimizationVisitor& astVisitor)  {
     return astVisitor.visitOptimization(*this) ;
 }
+
 //void FunctionAST::optimize(EvaluationContext& evaluationContext, optional<int64_t>& evaluatedValue) {
 //
 //    size_t statement_size = 0 ;
@@ -501,7 +567,7 @@ LiteralAST::LiteralAST(CodeManager* manager, CodeReference codeReference) : Expr
      size_t begin = codeReference.getStartLineRange().second ;
      size_t last = codeReference.getStartLineRange().second ;
      string_view token = codeManager->getCurrentLine(line).substr(begin , last - begin + 1) ;
-     value = str_to_int64(token) ;
+     this->value = str_to_int64(token) ;
 }
 void LiteralAST::accept(ASTVisitor& astVistor) const {
     astVistor.visit(*this) ;
@@ -538,6 +604,7 @@ StatementAST::StatementAST(CodeManager* manager) : StatementAST(){
 StatementAST::StatementAST(CodeManager* manager, CodeReference codeReference1) : StatementAST(manager) {
     this->codeReference = codeReference1 ;
 }
+
 ExpressionAST::ExpressionAST() {
     node_index = node_index_incrementer++ ;
 }
@@ -547,5 +614,6 @@ ExpressionAST::ExpressionAST(CodeManager* manager):ExpressionAST() {
 ExpressionAST::ExpressionAST(CodeManager* manager, CodeReference codeReference1) : ExpressionAST(manager){
     this->codeReference = codeReference1 ;
 }
+
 } //namespace jitcompiler
 //---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
-#ifndef PLJIT_PRINTASTVISTOR_HPP
-#define PLJIT_PRINTASTVISTOR_HPP
+#ifndef PLJIT_PRINTASTVISITOR_HPP
+#define PLJIT_PRINTASTVISITOR_HPP
 
 #include "ASTVisitor.hpp"
 #include <sstream>
@@ -8,7 +8,7 @@
 namespace jitcompiler {
 //---------------------------------------------------------------------------
 
-class PrintASTVistor final : public ASTVisitor {
+class PrintASTVisitor final : public ASTVisitor {
     private:
     std::ostringstream buf ;
     public:
@@ -27,4 +27,4 @@ class PrintASTVistor final : public ASTVisitor {
 } // namespace jitcompiler
 //---------------------------------------------------------------------------
 
-#endif //PLJIT_PRINTASTVISTOR_HPP
+#endif //PLJIT_PRINTASTVISITOR_HPP

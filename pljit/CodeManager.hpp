@@ -28,6 +28,8 @@ class CodeManager
 
     void printCompileError(size_t token_length , std::string_view expectedToken = "") ;
 
+    void printSemanticError(CodeReference codeReference , std::string_view message = "") ;
+
     bool isCodeError() const ;
 
     std::string error_message() const ;

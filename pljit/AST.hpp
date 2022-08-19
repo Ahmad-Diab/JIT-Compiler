@@ -6,6 +6,7 @@
 #include <cassert>
 #include <optional>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace jitcompiler {
 //---------------------------------------------------------------------------
@@ -17,34 +18,37 @@ class EvaluationContext ;
 class OptimizationVisitor ;
 
 class SymbolTable {
+    private:
+    bool isCompiled = true ;
+    CodeManager* codeManager ;
+
+    // get<0>(e) = code_ref , get<1>(e) = index in declaration list , get<2>(e) = value (for const declaration only)
+    std::array
+        <
+            std::unordered_map<std::string_view , std::tuple<CodeReference , size_t , std::optional<int64_t>>>
+        ,
+            3
+        > tableIdentifier ;
+    bool addAttributes(const ParameterDeclaration& declaration) ;
+    bool addAttributes(const VariableDeclaration& declaration) ;
+    bool addAttributes(const ConstantDeclaration& declaration) ;
+
     public:
     enum AttributeType {
         PARAMETER,
         VARIABLE,
         CONSTANT
     };
-    private:
-    bool isCompiled = true ;
-    // value-> get<0>(e) = attribute_type , get<1>(e) = code_ref , get<2>(e) = index in declaration list , get<3>(e) = value (for const declaration only)
-//    std::unordered_map<std::string_view , std::tuple<AttributeType , CodeReference , size_t , std::optional<int64_t>>>
-//        tableIdentifiers ;
-    std::array<
-        std::unordered_map<std::string_view , std::tuple<CodeReference , size_t , std::optional<int64_t>>>
-        ,3>
-        tableIdentifier ;
 
-    bool addAttributes(const ParameterDeclaration& declaration) ;
-    bool addAttributes(const VariableDeclaration& declaration) ;
-    bool addAttributes(const ConstantDeclaration& declaration) ;
+    explicit SymbolTable(CodeManager* codeManager , const FunctionDeclaration& functionDeclaration) ;
 
-    public:
-    explicit SymbolTable(const FunctionDeclaration& functionDeclaration) ;
-
-    void insert(std::string_view identifier , AttributeType type, CodeReference codeReference , size_t index , std::optional<int64_t> value) ;
+    void insert(std::string_view identifier , AttributeType type, CodeReference codeReference , size_t index /*for parameter*/, std::optional<int64_t> value) ;
 
     bool isDeclared(std::string_view identifier) const ;
 
-    bool isConstant(std::string_view identifier)  ;
+    bool isConstant(std::string_view identifier)  const;
+
+    bool isVariable(std::string_view identifier) const ;
 
     bool isComplied() const ;
 
@@ -95,21 +99,23 @@ class FunctionAST final : public ASTNode {
     friend class OptimizationVisitor ;
     public:
 
-    explicit FunctionAST(std::unique_ptr<FunctionDeclaration>& functionDeclaration ,CodeManager* manager) ;
+    explicit FunctionAST(CodeManager* manager) ;
 
     ASTNode::Type getType() const override;
-
-    const StatementAST& getStatement(size_t index) const ;
-
-    std::size_t statement_size() const ;
-
-    std::unique_ptr<StatementAST> releaseStatement(size_t index) ;
 
     void accept(ASTVisitor& astVistor) const override ;
 
     std::optional<int64_t> acceptOptimization(OptimizationVisitor& astVisitor)  override ;
 
     std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const override ;
+
+    bool compileCode(const FunctionDeclaration& functionDeclaration) ;
+
+    const StatementAST& getStatement(size_t index) const ;
+
+    std::size_t statement_size() const ;
+
+    std::unique_ptr<StatementAST> releaseStatement(size_t index) ;
 
 
 };
@@ -127,7 +133,6 @@ class ExpressionAST  : public ASTNode {
     explicit ExpressionAST() ;
     explicit ExpressionAST(CodeManager* manager) ;
     explicit ExpressionAST(CodeManager* manager , CodeReference codeReference1) ;
-
 };
 class ReturnStatementAST final :public StatementAST {
     std::unique_ptr<ExpressionAST> input ;
@@ -141,15 +146,15 @@ class ReturnStatementAST final :public StatementAST {
 
     ASTNode::Type getType() const override;
 
-    const ExpressionAST& getInput() const ;
-
-    std::unique_ptr<ExpressionAST> releaseInput() ;
-
-    void accept(ASTVisitor& astVistor) const override ;
+    void accept(ASTVisitor& astVisitor) const override ;
 
     std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const override ;
 
     std::optional<int64_t> acceptOptimization(OptimizationVisitor& astVisitor)  override ;
+
+    const ExpressionAST& getInput() const ;
+
+    std::unique_ptr<ExpressionAST> releaseInput() ;
 
 };
 class AssignmentStatementAST final : public StatementAST {
@@ -277,11 +282,13 @@ class LiteralAST final :public ExpressionAST {
     public:
     explicit LiteralAST
         (CodeManager* manager , CodeReference codeReference) ;
+
     explicit LiteralAST (int64_t value) ;
 
     ASTNode::Type getType() const override;
 
     int64_t getValue() const ;
+
     void accept(ASTVisitor& astVistor) const override ;
 
     std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const override ;

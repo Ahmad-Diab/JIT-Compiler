@@ -81,11 +81,11 @@ class NonTerminalNode : public ParseTreeNode {
 
     explicit NonTerminalNode(CodeManager* manager)  ;
 
-    const ParseTreeNode & getChild(const size_t index) const;
+    const ParseTreeNode & getChild(size_t index) const;
 
     std::size_t num_children() const ;
 
-    std::unique_ptr<ParseTreeNode> releaseChild(const size_t index) ;
+    std::unique_ptr<ParseTreeNode> releaseChild(size_t index) ;
 
 };
 //---------------------------------------------------------------------------
@@ -276,7 +276,7 @@ class PrimaryExpression final : public NonTerminalNode {
 class Identifier final : public TerminalNode {
     public:
 
-    explicit Identifier(CodeManager* manager ) ;
+    explicit Identifier(CodeManager* manager) ;
 
     Type getType() const override ;
 

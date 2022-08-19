@@ -48,12 +48,13 @@ class Pljit {
                 }
                 auto& tokenStream = lexicalAnalyzer[curIndex] ;
                 syntaxAnalyzer[curIndex] = std::make_unique<FunctionDeclaration>(manager) ;
-                if(!syntaxAnalyzer[curIndex]->recursiveDecentParser(*tokenStream)) {
+                if(!syntaxAnalyzer[curIndex]->compileCode(*tokenStream)) {
                     compileTrigger[curIndex] = false ;
                     std::cout << manager->error_message() << '\n';
                     return std::nullopt ;
                 }
-                semanticAnalyzer[curIndex] = make_unique<FunctionAST>(syntaxAnalyzer[curIndex] , manager) ;
+                semanticAnalyzer[curIndex] = std::make_unique<FunctionAST>(manager) ;
+                semanticAnalyzer[curIndex]->compileCode(*syntaxAnalyzer[curIndex]) ;
                 if(manager->isCodeError()) {
                     compileTrigger[curIndex] = false ;
                     std::cout << manager->error_message() << '\n' ;

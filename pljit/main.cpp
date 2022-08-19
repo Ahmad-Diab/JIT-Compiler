@@ -1,7 +1,7 @@
 #include "EvaluationContext.hpp"
 #include "OptimizationASTVisitor.hpp"
 #include "Pljit.hpp"
-#include "PrintASTVistor.hpp"
+#include "PrintASTVisitor.hpp"
 #include "PrintParseTreeVisitor.hpp"
 #include <iostream>
 
@@ -14,20 +14,34 @@ using namespace jitcompiler ;
 
 void foo1()
 {
-    string identifier = "BEGIN RETURN 1 END";
+    string identifier =
+        "PARAM  b , c;\n"
+        "VAR x , y;\n"
+        "CONST a = 10;\n"
+        "BEGIN \n"
+        "x := a + 3\n"
+        "END.\n";
     CodeManager manager(identifier) ;
     TokenStream lexicalAnalyzer(&manager);
     lexicalAnalyzer.compileCode() ;
     assert(!manager.isCodeError());
     FunctionDeclaration node(&manager) ;
-    if(!node.compileCode(lexicalAnalyzer)) { cout << manager.error_message() ;}
+    node.compileCode(lexicalAnalyzer) ;
+    assert(!manager.isCodeError());
+    FunctionAST functionAst(&manager) ;
+
+    if(!functionAst.compileCode(node)) {
+        cout << manager.error_message() ;
+    }
     else {
         constexpr bool f = false ;
         PrintVisitor<f> printVisitor ;
         printVisitor.reset() ;
         node.accept(printVisitor) ;
         cout << printVisitor.getOutput()  ;
+
     }
+
 }
 
 int main() {

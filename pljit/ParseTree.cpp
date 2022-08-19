@@ -54,13 +54,13 @@ std::string_view TerminalNode::print_token() const {
 NonTerminalNode::NonTerminalNode(CodeManager* manager) {
     codeManager = manager ;
 }
-const ParseTreeNode& NonTerminalNode::getChild(const size_t index) const {
+const ParseTreeNode& NonTerminalNode::getChild(size_t index) const {
     return *children[index].get();
 }
 std::size_t NonTerminalNode::num_children() const {
     return children.size() ;
 }
-std::unique_ptr<ParseTreeNode> NonTerminalNode::releaseChild(const size_t index) {
+std::unique_ptr<ParseTreeNode> NonTerminalNode::releaseChild(size_t index) {
     unique_ptr<ParseTreeNode> node = move(children[index]);
     return node;
 }

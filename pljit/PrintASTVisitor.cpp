@@ -1,4 +1,4 @@
-#include "PrintASTVistor.hpp"
+#include "PrintASTVisitor.hpp"
 #include "AST.hpp"
 //---------------------------------------------------------------------------
 //using namespace std ;
@@ -57,7 +57,7 @@ namespace {
     }
 } // anonymous namespace
 
-void PrintASTVistor::   visit(const FunctionAST& functionAst) {
+void PrintASTVisitor::   visit(const FunctionAST& functionAst) {
     buf << '\t' <<  functionAst.getNodeID() << " [label=\"" << "Function" << "\"];\n" ;
 
     for(size_t index = 0 ; index < functionAst.statement_size() ; ++index) {
@@ -76,11 +76,11 @@ void PrintASTVistor::   visit(const FunctionAST& functionAst) {
         curChild.accept(*this);
     }
 }
-void PrintASTVistor::visit(const ReturnStatementAST& returnStatementAst)  {
+void PrintASTVisitor::visit(const ReturnStatementAST& returnStatementAst)  {
     print_expression(buf , returnStatementAst , returnStatementAst.getInput()) ;
     returnStatementAst.getInput().accept(*this) ;
 }
-void PrintASTVistor::visit(const AssignmentStatementAST& assignmentStatementAst) {
+void PrintASTVisitor::visit(const AssignmentStatementAST& assignmentStatementAst) {
     const IdentifierAST& identifierAst = static_cast<const IdentifierAST&>(assignmentStatementAst.getLeftIdentifier()) ;
     const ExpressionAST& expressionAst = static_cast<const ExpressionAST&>(assignmentStatementAst.getRightExpression()) ;
     buf << '\t' << identifierAst.getNodeID() << " [label=\"" << identifierAst.print_token() << "\"];\n";
@@ -88,7 +88,7 @@ void PrintASTVistor::visit(const AssignmentStatementAST& assignmentStatementAst)
     print_expression(buf , assignmentStatementAst , expressionAst) ;
     expressionAst.accept(*this) ;
 }
-void PrintASTVistor::visit(const BinaryExpressionAST& binaryExpressionAst) {
+void PrintASTVisitor::visit(const BinaryExpressionAST& binaryExpressionAst) {
     const ExpressionAST& leftExpression = binaryExpressionAst.getLeftExpression() ;
     const ExpressionAST& rightExpression = binaryExpressionAst.getRightExpression() ;
     print_expression(buf , binaryExpressionAst , leftExpression) ;
@@ -96,21 +96,21 @@ void PrintASTVistor::visit(const BinaryExpressionAST& binaryExpressionAst) {
     leftExpression.accept(*this) ;
     rightExpression.accept(*this) ;
 }
-void PrintASTVistor::visit(const UnaryExpressionAST& unaryExpressionAst) {
+void PrintASTVisitor::visit(const UnaryExpressionAST& unaryExpressionAst) {
     const ExpressionAST& expressionAst = unaryExpressionAst.getInput() ;
     print_expression(buf , unaryExpressionAst , expressionAst) ;
     expressionAst.accept(*this) ;
 }
-void PrintASTVistor::visit(const IdentifierAST& /*identifierAst*/) {
+void PrintASTVisitor::visit(const IdentifierAST& /*identifierAst*/) {
 
 }
-void PrintASTVistor::visit(const LiteralAST& /*literalAst*/) {
+void PrintASTVisitor::visit(const LiteralAST& /*literalAst*/) {
 
 }
-void PrintASTVistor::reset() {
+void PrintASTVisitor::reset() {
     buf.clear() ;
 }
-std::string PrintASTVistor::getOutput()  {
+std::string PrintASTVisitor::getOutput()  {
     return buf.str() ;
 }
 
