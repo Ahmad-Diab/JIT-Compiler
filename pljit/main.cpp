@@ -14,13 +14,21 @@ using namespace jitcompiler ;
 
 void foo1()
 {
+
+}
+
+int main() {
+
     string identifier =
-        "PARAM  b , c;\n"
-        "VAR x , y;\n"
-        "CONST a = 10;\n"
-        "BEGIN \n"
-        "x := a + 3\n"
-        "END.\n";
+        "PARAM xa , xb , ya , yb;\n"
+        "VAR x , y , d;\n"
+        "BEGIN\n"
+        "x := (xa - xb) * (xa - xb);\n"
+        "y := (ya - yb) * (ya - yb);\n"
+        "d := x + y\n"
+        "END.\n" ;
+        ;
+
     CodeManager manager(identifier) ;
     TokenStream lexicalAnalyzer(&manager);
     lexicalAnalyzer.compileCode() ;
@@ -34,19 +42,14 @@ void foo1()
         cout << manager.error_message() ;
     }
     else {
-        constexpr bool f = false ;
-        PrintVisitor<f> printVisitor ;
+        constexpr bool f = true ;
+        PrintASTVisitor<f> printVisitor ;
         printVisitor.reset() ;
-        node.accept(printVisitor) ;
+        functionAst.accept(printVisitor) ;
         cout << printVisitor.getOutput()  ;
 
     }
 
-}
-
-int main() {
-
-    foo1() ;
 //    string source_code1 = "PARAM  d;\n"
 //                         "VAR volume;\n"
 //                         "CONST density=2400,width=21,height=3,depth=2;\n"

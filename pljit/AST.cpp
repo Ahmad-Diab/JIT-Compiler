@@ -317,9 +317,9 @@ bool FunctionAST::compileCode(const FunctionDeclaration& functionDeclaration) {
             auto child = analyzeStatement(statement , *symbolTable , initializedVariables) ;
             if(child == nullptr)
                 return false ;
-            children.emplace_back(move(child)) ;
-            if(children.front().get()->getType() == ASTNode::Type::RETURN_STATEMENT)
+            if(child->getType() == ASTNode::Type::RETURN_STATEMENT)
                 returnStatementTriggered = true ;
+            children.emplace_back(move(child)) ;
         }
     }
     if(!returnStatementTriggered)
@@ -565,7 +565,7 @@ ASTNode::Type LiteralAST::getType() const {
 LiteralAST::LiteralAST(CodeManager* manager, CodeReference codeReference) : ExpressionAST(manager, codeReference) {
      size_t line  = codeReference.getStartLineRange().first ;
      size_t begin = codeReference.getStartLineRange().second ;
-     size_t last = codeReference.getStartLineRange().second ;
+     size_t last = codeReference.getEndLineRange().second ;
      string_view token = codeManager->getCurrentLine(line).substr(begin , last - begin + 1) ;
      this->value = str_to_int64(token) ;
 }
