@@ -147,7 +147,7 @@ std::string CodeManager::error_message() const {
 }
 std::string CodeManager::runtimeErrorMessage() {
     string res = runtimeErrorStream.str() ;
-    runtimeErrorStream.clear() ;
+    runtimeErrorStream.str("");
     return res ;
 }
 

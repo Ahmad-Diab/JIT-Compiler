@@ -20,15 +20,16 @@ void foo1()
 int main() {
 
     string identifier =
-        "PARAM xa , xb , ya , yb;\n"
+        "PARAM yb;\n"
         "VAR x , y , d;\n"
+        "CONST xa = 1 , xb = 2 , ya = 3;\n"
         "BEGIN\n"
         "x := (xa - xb) * (xa - xb);\n"
         "y := (ya - yb) * (ya - yb);\n"
         "d := x + y;\n"
         "RETURN d;\n"
-        "RETURN x + y\n"
-        "END.\n" ;
+        "x:= 10 + (3 - 11) * 11 / 0\n"
+        "END.\n";
     CodeManager manager(identifier) ;
     TokenStream lexicalAnalyzer(&manager);
     lexicalAnalyzer.compileCode() ;
@@ -37,11 +38,16 @@ int main() {
     node.compileCode(lexicalAnalyzer) ;
     assert(!manager.isCodeError());
     FunctionAST functionAst(&manager) ;
-
-    if(!functionAst.compileCode(node)) {
-        cout << manager.error_message() ;
-    }
-    else {
+    functionAst.compileCode(node) ;
+    vector<int64_t > param = {10};
+    EvaluationContext evaluationContextOld {param , functionAst.getSymbolTable()};
+    auto oldEval = functionAst.evaluate(evaluationContextOld) ;
+    assert(oldEval.has_value()) ;
+//    if(!functionAst.compileCode(node)) {
+//        cout << manager.error_message() ;
+//    }
+//    else
+    {
         OptimizationVisitor optimizationVisitor ;
         functionAst.acceptOptimization(optimizationVisitor) ;
         constexpr bool f = false ;
@@ -137,5 +143,6 @@ int main() {
 //        cout << "Syntax Analysis failed" << "\n";
 //        cout << manager.error_message() << '\n' ;
 //    }
+    return 0 ;
 }
 //---------------------------------------------------------------------------
