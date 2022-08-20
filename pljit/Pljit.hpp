@@ -30,6 +30,7 @@ class Pljit {
     std::vector<std::unique_ptr<FunctionDeclaration>> syntaxAnalyzer ;
     std::vector<std::unique_ptr<FunctionAST>> semanticAnalyzer ;
     std::vector<std::unique_ptr<OptimizationVisitor>> optimizer ;
+
     public:
     auto registerFunction(std::string_view code) {
 
@@ -37,11 +38,15 @@ class Pljit {
         ++capacity;
 
         codeMutex.push_back(std::make_unique<std::shared_mutex>()) ;
-        compileTrigger.emplace_back() ;
-        codeManagement.emplace_back(make_unique<CodeManager>(code)) ;
-        lexicalAnalyzer.emplace_back() ;
-        syntaxAnalyzer.emplace_back()  ;
-        semanticAnalyzer.emplace_back() ;
+        compileTrigger.emplace_back(std::nullopt) ;
+
+        std::unique_ptr<CodeManager> codeManager = make_unique<CodeManager>(code) ;
+
+        lexicalAnalyzer.emplace_back(std::make_unique<TokenStream>(codeManager.get())) ;
+        syntaxAnalyzer.emplace_back(std::make_unique<FunctionDeclaration>(codeManager.get()))  ;
+        semanticAnalyzer.emplace_back(std::make_unique<FunctionAST>(codeManager.get())) ;
+        optimizer.emplace_back(std::make_unique<OptimizationVisitor>()) ;
+        codeManagement.emplace_back(std::move(codeManager)) ;
 
         // return pair (value , error_message)
         return [& , index](std::vector<int64_t> parameter_list) -> std::pair<std::optional<int64_t> , std::string> {
@@ -53,30 +58,34 @@ class Pljit {
                 if (!compileTrigger[curIndex].has_value()) {
                     // uncomment to check on compiling the code for first time only
 //                    std::cout << "compileCode\n" ;
-                    CodeManager* manager = codeManagement[curIndex].get();
-                    lexicalAnalyzer[curIndex] = std::make_unique<TokenStream>(manager);
-                    lexicalAnalyzer[curIndex]->compileCode();
-                    if (manager->isCodeError()) {
+
+                    CodeManager& manager = *codeManagement[curIndex];
+
+                    TokenStream& tokenStream = *lexicalAnalyzer[curIndex] ;
+                    tokenStream.compileCode();
+                    if (manager.isCodeError()) {
                         compileTrigger[curIndex] = false;
-                        return {std::nullopt , manager->error_message()};
+                        return {std::nullopt , manager.error_message()};
                     }
-                    auto& tokenStream = lexicalAnalyzer[curIndex];
-                    syntaxAnalyzer[curIndex] = std::make_unique<FunctionDeclaration>(manager);
-                    if (!syntaxAnalyzer[curIndex]->compileCode(*tokenStream)) {
+
+                    FunctionDeclaration& parseTree = *syntaxAnalyzer[curIndex] ;
+                    if (!parseTree.compileCode(tokenStream)) {
                         compileTrigger[curIndex] = false;
-                        return {std::nullopt , manager->error_message()};
+                        return {std::nullopt , manager.error_message()};
                     }
-                    semanticAnalyzer[curIndex] = std::make_unique<FunctionAST>(manager);
-                    semanticAnalyzer[curIndex]->compileCode(*syntaxAnalyzer[curIndex]);
-                    if (manager->isCodeError()) {
+
+                    FunctionAST& functionAst = *semanticAnalyzer[curIndex] ;
+                    functionAst.compileCode(*syntaxAnalyzer[curIndex]);
+                    if (manager.isCodeError()) {
                         compileTrigger[curIndex] = false;
-                        return {std::nullopt , manager->error_message()};
+                        return {std::nullopt , manager.error_message()};
                     }
-                    FunctionAST* functionAst = semanticAnalyzer[curIndex].get();
-                    EvaluationContext evalOptimization(semanticAnalyzer[curIndex]->getSymbolTable());
-                    OptimizationVisitor optimizationVisitor;
-                    functionAst->acceptOptimization(optimizationVisitor);
+
+                    OptimizationVisitor&optimizationVisitor = *optimizer[curIndex] ;
+                    functionAst.acceptOptimization(optimizationVisitor);
+
                     compileTrigger[curIndex] = true;
+
                 }
                 isCompiled = compileTrigger[curIndex].value() ;
             }
