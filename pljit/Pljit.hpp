@@ -2,11 +2,11 @@
 #define PLJIT_PLJIT_HPP
 
 //---------------------------------------------------------------------------
-#include "AST.hpp"
-#include "EvaluationContext.hpp"
-#include "OptimizationASTVisitor.hpp"
-#include "ParseTree.hpp"
-#include "TokenStream.hpp"
+#include "pljit/semantic/AST.hpp"
+#include "pljit/semantic/EvaluationContext.hpp"
+#include "pljit/semantic/OptimizationASTVisitor.hpp"
+#include "pljit/syntax/ParseTree.hpp"
+#include "pljit/syntax/TokenStream.hpp"
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -25,11 +25,11 @@ class Pljit {
     std::vector<std::optional<bool>> compileTrigger ;
     std::vector<std::unique_ptr<std::shared_mutex>> codeMutex ;
 
-    std::vector<std::unique_ptr<CodeManager>> codeManagement ;
-    std::vector<std::unique_ptr<TokenStream>> lexicalAnalyzer ;
-    std::vector<std::unique_ptr<FunctionDeclaration>> syntaxAnalyzer ;
-    std::vector<std::unique_ptr<FunctionAST>> semanticAnalyzer ;
-    std::vector<std::unique_ptr<OptimizationVisitor>> optimizer ;
+    std::vector<std::unique_ptr<management::CodeManager>> codeManagement ;
+    std::vector<std::unique_ptr<syntax::TokenStream>> lexicalAnalyzer ;
+    std::vector<std::unique_ptr<syntax::FunctionDeclaration>> syntaxAnalyzer ;
+    std::vector<std::unique_ptr<semantic::FunctionAST>> semanticAnalyzer ;
+    std::vector<std::unique_ptr<semantic::OptimizationVisitor>> optimizer ;
 
     public:
     auto registerFunction(std::string_view code) {
@@ -40,12 +40,12 @@ class Pljit {
         codeMutex.push_back(std::make_unique<std::shared_mutex>()) ;
         compileTrigger.emplace_back(std::nullopt) ;
 
-        std::unique_ptr<CodeManager> codeManager = make_unique<CodeManager>(code) ;
+        std::unique_ptr<management::CodeManager> codeManager = make_unique<management::CodeManager>(code) ;
 
-        lexicalAnalyzer.emplace_back(std::make_unique<TokenStream>(codeManager.get())) ;
-        syntaxAnalyzer.emplace_back(std::make_unique<FunctionDeclaration>(codeManager.get()))  ;
-        semanticAnalyzer.emplace_back(std::make_unique<FunctionAST>(codeManager.get())) ;
-        optimizer.emplace_back(std::make_unique<OptimizationVisitor>()) ;
+        lexicalAnalyzer.emplace_back(std::make_unique<syntax::TokenStream>(codeManager.get())) ;
+        syntaxAnalyzer.emplace_back(std::make_unique<syntax::FunctionDeclaration>(codeManager.get()))  ;
+        semanticAnalyzer.emplace_back(std::make_unique<semantic::FunctionAST>(codeManager.get())) ;
+        optimizer.emplace_back(std::make_unique<semantic::OptimizationVisitor>()) ;
         codeManagement.emplace_back(std::move(codeManager)) ;
 
         // return pair (value , error_message)
@@ -59,29 +59,29 @@ class Pljit {
                     // uncomment to check on compiling the code for first time only
 //                    std::cout << "compileCode\n" ;
 
-                    CodeManager& manager = *codeManagement[curIndex];
+                    management::CodeManager& manager = *codeManagement[curIndex];
 
-                    TokenStream& tokenStream = *lexicalAnalyzer[curIndex] ;
+                    syntax::TokenStream& tokenStream = *lexicalAnalyzer[curIndex] ;
                     tokenStream.compileCode();
                     if (manager.isCodeError()) {
                         compileTrigger[curIndex] = false;
                         return {std::nullopt , manager.error_message()};
                     }
 
-                    FunctionDeclaration& parseTree = *syntaxAnalyzer[curIndex] ;
+                    syntax::FunctionDeclaration& parseTree = *syntaxAnalyzer[curIndex] ;
                     if (!parseTree.compileCode(tokenStream)) {
                         compileTrigger[curIndex] = false;
                         return {std::nullopt , manager.error_message()};
                     }
 
-                    FunctionAST& functionAst = *semanticAnalyzer[curIndex] ;
+                    semantic::FunctionAST& functionAst = *semanticAnalyzer[curIndex] ;
                     functionAst.compileCode(*syntaxAnalyzer[curIndex]);
                     if (manager.isCodeError()) {
                         compileTrigger[curIndex] = false;
                         return {std::nullopt , manager.error_message()};
                     }
 
-                    OptimizationVisitor&optimizationVisitor = *optimizer[curIndex] ;
+                    semantic::OptimizationVisitor&optimizationVisitor = *optimizer[curIndex] ;
                     functionAst.acceptOptimization(optimizationVisitor);
 
                     compileTrigger[curIndex] = true;
@@ -93,7 +93,7 @@ class Pljit {
                 std::optional<int64_t> result ;
                 {
                     std::shared_lock lock(mtx);
-                    EvaluationContext evaluationContext(parameter_list, semanticAnalyzer[curIndex]->getSymbolTable());
+                    semantic::EvaluationContext evaluationContext(parameter_list, semanticAnalyzer[curIndex]->getSymbolTable());
                     result = semanticAnalyzer[curIndex]->evaluate(evaluationContext);
                     if(!result.has_value())
                         return {std::nullopt , codeManagement[curIndex]->runtimeErrorMessage()} ;

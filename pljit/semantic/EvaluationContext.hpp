@@ -7,7 +7,7 @@
 #include <optional>
 
 //---------------------------------------------------------------------------
-namespace jitcompiler {
+namespace jitcompiler::semantic{
 //---------------------------------------------------------------------------
 class SymbolTable ;
 
@@ -34,7 +34,7 @@ class EvaluationContext {
 };
 
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::semantic
 //---------------------------------------------------------------------------
 
 #endif //PLJIT_EVALUATIONCONTEXT_HPP

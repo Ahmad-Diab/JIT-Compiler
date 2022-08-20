@@ -1,9 +1,11 @@
+#include "pljit/management/CodeManager.hpp"
+#include "pljit/syntax/TokenStream.hpp"
 #include <gtest/gtest.h>
-#include "pljit/CodeManager.hpp"
-#include "pljit/TokenStream.hpp"
 
 using namespace std;
 using namespace jitcompiler ;
+using namespace jitcompiler ::management;
+using namespace jitcompiler ::syntax;
 
 TEST(TestTokenStream , TestSingleToken) {
     constexpr array<string_view, 6> keywords = {"PARAM", "VAR", "CONST", "BEGIN", "END", "RETURN"};

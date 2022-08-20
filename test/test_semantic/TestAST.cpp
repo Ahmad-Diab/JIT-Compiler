@@ -1,13 +1,16 @@
 #include <gtest/gtest.h>
 
-#include "pljit/CodeManager.hpp"
-#include "pljit/TokenStream.hpp"
-#include "pljit/ParseTree.hpp"
-#include "pljit/AST.hpp"
-#include "pljit/PrintASTVisitor.hpp"
+#include "pljit/management/CodeManager.hpp"
+#include "pljit/syntax/TokenStream.hpp"
+#include "pljit/syntax/ParseTree.hpp"
+#include "pljit/semantic/AST.hpp"
+#include "pljit/semantic/PrintASTVisitor.hpp"
 
 using namespace std ;
 using namespace jitcompiler ;
+using namespace jitcompiler ::management;
+using namespace jitcompiler ::syntax;
+using namespace jitcompiler ::semantic;
 
 TEST(TestAST , TestSymbolTable)
 {

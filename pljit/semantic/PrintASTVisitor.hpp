@@ -6,13 +6,13 @@
 #include <sstream>
 
 //---------------------------------------------------------------------------
-namespace jitcompiler {
+namespace jitcompiler ::semantic{
 //---------------------------------------------------------------------------
 template<bool isLabeled>
 class PrintASTVisitor ;
 
 using TestPrintASTVisitor = PrintASTVisitor<false> ;
-using VisualizeASTVisitor = PrintASTVisitor< true> ;
+using VisualizeASTVisitor = PrintASTVisitor<true> ;
 
 template<bool isLabeled>
 class PrintASTVisitor final : public ASTVisitor {

@@ -1,9 +1,11 @@
-#include "pljit/PrintParseTreeVisitor.hpp"
-#include "pljit/ParseTree.hpp"
+#include "pljit/syntax/ParseTree.hpp"
+#include "pljit/syntax/PrintParseTreeVisitor.hpp"
 #include <gtest/gtest.h>
 
 using namespace std ;
 using namespace jitcompiler ;
+using namespace jitcompiler ::management;
+using namespace jitcompiler ::syntax;
 
 TEST(TestParseTree , TestLiteral) {
     { // feasible to compile

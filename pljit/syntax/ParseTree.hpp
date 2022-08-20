@@ -2,10 +2,10 @@
 #define PLJIT_PARSETREE_HPP
 
 //---------------------------------------------------------------------------
-#include "CodeReference.hpp"
 #include "TokenStream.hpp"
+#include "pljit/management/CodeReference.hpp"
 #include <memory>
-namespace jitcompiler {
+namespace jitcompiler ::syntax{
 //---------------------------------------------------------------------------
 class ParseTreeVisitor ;
 //---------------------------------------------------------------------------
@@ -14,8 +14,8 @@ class ParseTreeNode {
     protected:
     // TODO codeReference for all non terminal nodes
     //---------------------------------------------------------------------------
-     CodeReference codeReference ;
-     CodeManager* codeManager ;
+     management::CodeReference codeReference ;
+     management::CodeManager* codeManager ;
      //---------------------------------------------------------------------------
 
      size_t node_index ;
@@ -59,17 +59,17 @@ public:
 
     bool compileCode(TokenStream& tokenStream) ;
 
-    CodeReference getReference() const ;
+    management::CodeReference getReference() const ;
 
-    CodeManager* getManager() const ;
+    management::CodeManager* getManager() const ;
 
-    std::string print_dot() const ;
+    std::string visualizeDot() const ;
 };
 class TerminalNode : public ParseTreeNode {
 
     public:
-    explicit TerminalNode(CodeManager* manager) ;
-    explicit TerminalNode(CodeManager* manager , CodeReference codeReference) ;
+    explicit TerminalNode(management::CodeManager* manager) ;
+    explicit TerminalNode(management::CodeManager* manager , management::CodeReference codeReference) ;
 
     std::string_view print_token() const;
 };
@@ -79,7 +79,7 @@ class NonTerminalNode : public ParseTreeNode {
 
     public:
 
-    explicit NonTerminalNode(CodeManager* manager)  ;
+    explicit NonTerminalNode(management::CodeManager* manager)  ;
 
     const ParseTreeNode & getChild(size_t index) const;
 
@@ -92,7 +92,7 @@ class NonTerminalNode : public ParseTreeNode {
 class FunctionDeclaration final : public NonTerminalNode {
     public:
 
-    explicit FunctionDeclaration(CodeManager* manager)  ;
+    explicit FunctionDeclaration(management::CodeManager* manager)  ;
 
     Type getType() const override ;
 
@@ -105,7 +105,7 @@ class FunctionDeclaration final : public NonTerminalNode {
 class ParameterDeclaration final : public NonTerminalNode {
     public:
 
-    explicit ParameterDeclaration(CodeManager* manager) ;
+    explicit ParameterDeclaration(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -117,7 +117,7 @@ class ParameterDeclaration final : public NonTerminalNode {
 class VariableDeclaration final : public NonTerminalNode {
     public:
 
-    explicit VariableDeclaration(CodeManager* manager) ;
+    explicit VariableDeclaration(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -129,7 +129,7 @@ class VariableDeclaration final : public NonTerminalNode {
 class ConstantDeclaration final : public NonTerminalNode {
     public:
 
-    explicit ConstantDeclaration(CodeManager* manager )   ;
+    explicit ConstantDeclaration(management::CodeManager* manager )   ;
 
     Type getType() const override ;
 
@@ -142,7 +142,7 @@ class ConstantDeclaration final : public NonTerminalNode {
 class DeclartorList final : public NonTerminalNode {
     public:
 
-    explicit DeclartorList(CodeManager* manager) ;
+    explicit DeclartorList(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -154,7 +154,7 @@ class DeclartorList final : public NonTerminalNode {
 class InitDeclartorList final : public NonTerminalNode {
     public:
 
-    explicit InitDeclartorList(CodeManager* manager) ;
+    explicit InitDeclartorList(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -167,7 +167,7 @@ class InitDeclartorList final : public NonTerminalNode {
 class InitDeclartor final : public NonTerminalNode {
     public:
 
-    explicit InitDeclartor(CodeManager* manager) ;
+    explicit InitDeclartor(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -179,7 +179,7 @@ class InitDeclartor final : public NonTerminalNode {
 class CompoundStatement final : public NonTerminalNode {
     public:
 
-    explicit CompoundStatement(CodeManager* manager) ;
+    explicit CompoundStatement(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -192,7 +192,7 @@ class CompoundStatement final : public NonTerminalNode {
 class StatementList final : public NonTerminalNode {
     public:
 
-    explicit StatementList(CodeManager* manager) ;
+    explicit StatementList(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -204,7 +204,7 @@ class StatementList final : public NonTerminalNode {
 class Statement final : public NonTerminalNode {
     public:
 
-    explicit Statement(CodeManager* manager) ;
+    explicit Statement(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -216,7 +216,7 @@ class Statement final : public NonTerminalNode {
 class AssignmentExpression final : public NonTerminalNode {
     public:
 
-    explicit AssignmentExpression(CodeManager* manager) ;
+    explicit AssignmentExpression(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -228,7 +228,7 @@ class AssignmentExpression final : public NonTerminalNode {
 class AdditiveExpression final : public NonTerminalNode {
     public:
 
-    explicit AdditiveExpression(CodeManager* manager) ;
+    explicit AdditiveExpression(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -240,7 +240,7 @@ class AdditiveExpression final : public NonTerminalNode {
 class MultiplicativeExpression final : public NonTerminalNode {
     public:
 
-    explicit MultiplicativeExpression(CodeManager* manager) ;
+    explicit MultiplicativeExpression(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -252,7 +252,7 @@ class MultiplicativeExpression final : public NonTerminalNode {
 class UnaryExpression final : public NonTerminalNode {
     public:
 
-    explicit UnaryExpression(CodeManager* manager ) ;
+    explicit UnaryExpression(management::CodeManager* manager ) ;
 
     Type getType() const override ;
 
@@ -264,7 +264,7 @@ class UnaryExpression final : public NonTerminalNode {
 class PrimaryExpression final : public NonTerminalNode {
     public:
 
-    explicit PrimaryExpression(CodeManager* manager) ;
+    explicit PrimaryExpression(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -276,7 +276,7 @@ class PrimaryExpression final : public NonTerminalNode {
 class Identifier final : public TerminalNode {
     public:
 
-    explicit Identifier(CodeManager* manager) ;
+    explicit Identifier(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -288,7 +288,7 @@ class Identifier final : public TerminalNode {
 class Literal final : public TerminalNode {
     public:
 
-    explicit Literal(CodeManager* manager) ;
+    explicit Literal(management::CodeManager* manager) ;
 
     Type getType() const override ;
 
@@ -300,7 +300,7 @@ class Literal final : public TerminalNode {
 class GenericToken final : public TerminalNode {
     public:
 
-    explicit GenericToken(CodeManager* manager , CodeReference codeReference) ;
+    explicit GenericToken(management::CodeManager* manager , management::CodeReference codeReference) ;
 
     Type getType() const override ;
 
@@ -310,6 +310,6 @@ class GenericToken final : public TerminalNode {
 
 };
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::syntax
 //---------------------------------------------------------------------------
 #endif //PLJIT_PARSETREE_HPP

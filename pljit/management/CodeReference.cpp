@@ -1,7 +1,7 @@
 #include "CodeReference.hpp"
 
 //---------------------------------------------------------------------------
-namespace jitcompiler {
+namespace jitcompiler::management {
 //---------------------------------------------------------------------------
 
 CodeReference::CodeReference(std::pair<size_t, size_t> start_line_range, std::pair<size_t,size_t> end_line_range) :start_line_range(std::move(start_line_range)) , end_line_range(std::move(end_line_range)) {
@@ -15,5 +15,5 @@ std::pair<size_t, size_t> CodeReference::getEndLineRange() const {
 CodeReference::CodeReference()  = default ;
 
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::management
 //---------------------------------------------------------------------------

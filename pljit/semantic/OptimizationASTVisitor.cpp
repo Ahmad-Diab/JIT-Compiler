@@ -1,10 +1,10 @@
 #include "OptimizationASTVisitor.hpp"
-#include "pljit/AST.hpp"
-#include "pljit/EvaluationContext.hpp"
+#include "AST.hpp"
+#include "EvaluationContext.hpp"
 //---------------------------------------------------------------------------
 using namespace std ;
 //---------------------------------------------------------------------------
-namespace jitcompiler {
+namespace jitcompiler ::semantic{
 //---------------------------------------------------------------------------
 
 optional<int64_t> OptimizationVisitor::visitOptimization(FunctionAST& functionAst) {

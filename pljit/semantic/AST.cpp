@@ -1,13 +1,14 @@
-#include "pljit/AST.hpp"
-#include "ASTVisitor.hpp"
-#include "pljit/EvaluationContext.hpp"
-#include "pljit/OptimizationASTVisitor.hpp"
-#include <iostream>
+#include "pljit/semantic/AST.hpp"
+#include "pljit/semantic/ASTVisitor.hpp"
+#include "pljit/semantic/EvaluationContext.hpp"
+#include "pljit/semantic/OptimizationASTVisitor.hpp"
+
 #include <unordered_set>
 //---------------------------------------------------------------------------
 using namespace std ;
+using namespace jitcompiler::syntax ;
 //---------------------------------------------------------------------------
-namespace jitcompiler {
+namespace jitcompiler ::semantic{
 
 namespace {
 
@@ -27,7 +28,7 @@ namespace {
         if(primaryExpression.getChild(0).getType() == ParseTreeNode::Type::IDENTIFIER) {
 
             const Identifier& identifier = static_cast<const Identifier&>(primaryExpression.getChild(0)) ;
-            CodeManager* manager = identifier.getManager() ;
+            management::CodeManager* manager = identifier.getManager() ;
             if(!symbolTable.isDeclared(identifier.print_token())) {
                 manager->printSemanticError(identifier.getReference() , "Undeclared Identifier") ;
                 return nullptr;
@@ -52,7 +53,7 @@ namespace {
     {
         if(unaryExpression.num_children() == 2)
         {
-            CodeManager* codeManager = unaryExpression.getManager() ;
+            management::CodeManager* codeManager = unaryExpression.getManager() ;
             char op = (static_cast<const GenericToken&>(unaryExpression.getChild(0))).print_token()[0] ;
             const PrimaryExpression& primaryExpression = static_cast<const PrimaryExpression&>(unaryExpression.getChild(1));
             UnaryExpressionAST::UnaryType type = op == '+' ? UnaryExpressionAST::UnaryType::PLUS :
@@ -74,7 +75,7 @@ namespace {
         if(multiplicativeExpression.num_children() == 1)
             return analyzeExpression(unaryExpression , symbolTable , initializedVariables) ;
 
-        CodeManager* codeManager = multiplicativeExpression.getManager() ;
+        management::CodeManager* codeManager = multiplicativeExpression.getManager() ;
         const GenericToken& tokenOperator = static_cast<const GenericToken&>(multiplicativeExpression.getChild(1)) ;
         char op = tokenOperator.print_token()[0] ;
         const MultiplicativeExpression& anotherMultiplicativeExpression = static_cast<const MultiplicativeExpression&>(multiplicativeExpression.getChild(2)) ;
@@ -102,7 +103,7 @@ namespace {
         if(additiveExpression.num_children() == 1)
             return analyzeExpression(multiplicativeExpression , symbolTable ,initializedVariables) ;
 
-        CodeManager* codeManager = additiveExpression.getManager() ;
+        management::CodeManager* codeManager = additiveExpression.getManager() ;
         char op = (static_cast<const GenericToken&>(additiveExpression.getChild(1))).print_token()[0] ;
         const AdditiveExpression& anotherAdditiveExpression = static_cast<const AdditiveExpression&>(additiveExpression.getChild(2)) ;
         BinaryExpressionAST::BinaryType type = op == '+' ? BinaryExpressionAST::BinaryType::PLUS :
@@ -124,7 +125,7 @@ namespace {
     }
     unique_ptr<StatementAST> analyzeStatement(const Statement& parseTreeNode , const SymbolTable& symbolTable, unordered_set<string_view> &initializedVariables)
     {
-        CodeManager* codeManager = parseTreeNode.getManager() ;
+        management::CodeManager* codeManager = parseTreeNode.getManager() ;
         if(parseTreeNode.getChild(0).getType() == ParseTreeNode::Type::ASSIGNMENT_EXPRESSION)
         {
             const AssignmentExpression& assignmentExpression = static_cast<const AssignmentExpression&>(parseTreeNode.getChild(0)) ;
@@ -234,7 +235,7 @@ bool SymbolTable::addAttributes(const ConstantDeclaration& declaration) {
     }
     return true ;
 }
-SymbolTable::SymbolTable(CodeManager* codeManager , const FunctionDeclaration& functionDeclaration) {
+SymbolTable::SymbolTable(management::CodeManager* codeManager , const FunctionDeclaration& functionDeclaration) {
     this->codeManager = codeManager ;
     for(size_t index = 0 ; isCompiled  && index < functionDeclaration.num_children(); ++index) {
         const ParseTreeNode& curNode = functionDeclaration.getChild(index) ;
@@ -271,11 +272,11 @@ bool SymbolTable::isVariable(std::string_view identifier) const {
 bool SymbolTable::isComplied() const {
     return isCompiled ;
 }
-void SymbolTable::insert(std::string_view identifier , AttributeType type ,CodeReference codeReference , size_t index , std::optional<int64_t> value) {
+void SymbolTable::insert(std::string_view identifier , AttributeType type ,management::CodeReference codeReference , size_t index , std::optional<int64_t> value) {
     assert(!isDeclared(identifier)) ;
     tableIdentifier[type][identifier] = make_tuple(codeReference , index , value) ;
 }
-array<unordered_map<std::string_view, std::tuple<CodeReference, size_t, std::optional<int64_t>>> , 3>& SymbolTable::getTableContent() {
+array<unordered_map<std::string_view, std::tuple<management::CodeReference, size_t, std::optional<int64_t>>> , 3>& SymbolTable::getTableContent() {
     return tableIdentifier ;
 }
 
@@ -284,7 +285,7 @@ ASTNode::Type FunctionAST::getType() const{
     return ASTNode::Type::FUNCTION ;
 }
 
-FunctionAST::FunctionAST(CodeManager* manager) {
+FunctionAST::FunctionAST(management::CodeManager* manager) {
     this->codeManager = manager ;
     node_index = node_index_incrementer++ ;
 
@@ -307,7 +308,7 @@ bool FunctionAST::compileCode(const FunctionDeclaration& functionDeclaration) {
     const CompoundStatement& compoundStatement = static_cast<const CompoundStatement&>(functionDeclaration.getChild(compound_index.value()));
     const StatementList& statementList = static_cast<const StatementList&>(compoundStatement.getChild(1));
     unordered_set<string_view> initializedVariables ; // TODO Handling uninitialized variables
-    CodeReference endReference = compoundStatement.getChild(2).getReference();
+    management::CodeReference endReference = compoundStatement.getChild(2).getReference();
     bool returnStatementTriggered = false ;
     for(size_t statement_index = 0 ; statement_index < statementList.num_children() ; statement_index++)
     {
@@ -400,10 +401,10 @@ std::optional<int64_t> FunctionAST::acceptOptimization(OptimizationVisitor& astV
 ASTNode::Type AssignmentStatementAST::getType() const {
     return ASTNode::Type::ASSIGNMENT_STATEMENT;
 }
-AssignmentStatementAST::AssignmentStatementAST(CodeManager* manager) : StatementAST(manager) {
+AssignmentStatementAST::AssignmentStatementAST(management::CodeManager* manager) : StatementAST(manager) {
 
 }
-AssignmentStatementAST::AssignmentStatementAST(CodeManager* manager, std::unique_ptr<IdentifierAST> left, std::unique_ptr<ExpressionAST> right) : AssignmentStatementAST(manager){
+AssignmentStatementAST::AssignmentStatementAST(management::CodeManager* manager, std::unique_ptr<IdentifierAST> left, std::unique_ptr<ExpressionAST> right) : AssignmentStatementAST(manager){
     this->leftIdentifier = move(left) ;
     this->rightExpression = move(right) ;
 }
@@ -434,7 +435,7 @@ std::optional<int64_t> AssignmentStatementAST::acceptOptimization(OptimizationVi
 ASTNode::Type ReturnStatementAST::getType() const {
     return ASTNode::Type::RETURN_STATEMENT;
 }
-ReturnStatementAST::ReturnStatementAST(CodeManager* manager, std::unique_ptr<ExpressionAST> input) : StatementAST(manager)
+ReturnStatementAST::ReturnStatementAST(management::CodeManager* manager, std::unique_ptr<ExpressionAST> input) : StatementAST(manager)
 {
     this->input = move(input) ;
 }
@@ -458,7 +459,7 @@ std::optional<int64_t> ReturnStatementAST::acceptOptimization(OptimizationVisito
 ASTNode::Type BinaryExpressionAST::getType() const {
     return ASTNode::Type::BINARY_EXPRESSION;
 }
-BinaryExpressionAST::BinaryExpressionAST(CodeManager* manager, BinaryExpressionAST::BinaryType type, std::unique_ptr<ExpressionAST> left, std::unique_ptr<ExpressionAST> right) : ExpressionAST(manager){
+BinaryExpressionAST::BinaryExpressionAST(management::CodeManager* manager, BinaryExpressionAST::BinaryType type, std::unique_ptr<ExpressionAST> left, std::unique_ptr<ExpressionAST> right) : ExpressionAST(manager){
     this->binaryType = type ;
     this->leftExpression = move(left) ;
     this->rightExpression = move(right) ;
@@ -509,14 +510,14 @@ std::optional<int64_t> BinaryExpressionAST::evaluate(EvaluationContext& evaluati
 std::optional<int64_t> BinaryExpressionAST::acceptOptimization(OptimizationVisitor& astVisitor) {
     return astVisitor.visitOptimization(*this) ;
 }
-BinaryExpressionAST::BinaryExpressionAST(CodeManager* manager, BinaryExpressionAST::BinaryType type, std::unique_ptr<ExpressionAST> left, std::unique_ptr<ExpressionAST> right, CodeReference reference) : BinaryExpressionAST(manager , type , move(left) , move(right)){
+BinaryExpressionAST::BinaryExpressionAST(management::CodeManager* manager, BinaryExpressionAST::BinaryType type, std::unique_ptr<ExpressionAST> left, std::unique_ptr<ExpressionAST> right, management::CodeReference reference) : BinaryExpressionAST(manager , type , move(left) , move(right)){
     codeReference = reference ;
 }
 
 ASTNode::Type UnaryExpressionAST::getType() const {
     return ASTNode::Type::UNARY_EXPRESSION;
 }
-UnaryExpressionAST::UnaryExpressionAST(CodeManager* manager, CodeReference codeReference1, UnaryExpressionAST::UnaryType type, std::unique_ptr<ExpressionAST> input) : ExpressionAST(manager , codeReference1){
+UnaryExpressionAST::UnaryExpressionAST(management::CodeManager* manager, management::CodeReference codeReference1, UnaryExpressionAST::UnaryType type, std::unique_ptr<ExpressionAST> input) : ExpressionAST(manager , codeReference1){
     this->unaryType = type ;
     this->input = move(input);
 }
@@ -548,7 +549,7 @@ std::optional<int64_t> UnaryExpressionAST::acceptOptimization(OptimizationVisito
 ASTNode::Type IdentifierAST::getType() const {
     return ASTNode::Type::IDENTIFIER;
 }
-IdentifierAST::IdentifierAST(CodeManager* manager, CodeReference codeReference) : ExpressionAST(manager, codeReference) {
+IdentifierAST::IdentifierAST(management::CodeManager* manager, management::CodeReference codeReference) : ExpressionAST(manager, codeReference) {
 
 }
 std::string_view IdentifierAST::print_token() const {
@@ -570,7 +571,7 @@ std::optional<int64_t> IdentifierAST::acceptOptimization(OptimizationVisitor& as
 ASTNode::Type LiteralAST::getType() const {
     return ASTNode::Type::LITERAL;
 }
-LiteralAST::LiteralAST(CodeManager* manager, CodeReference codeReference) : ExpressionAST(manager, codeReference) {
+LiteralAST::LiteralAST(management::CodeManager* manager, management::CodeReference codeReference) : ExpressionAST(manager, codeReference) {
      size_t line  = codeReference.getStartLineRange().first ;
      size_t begin = codeReference.getStartLineRange().second ;
      size_t last = codeReference.getEndLineRange().second ;
@@ -595,7 +596,7 @@ std::optional<int64_t> LiteralAST::acceptOptimization(OptimizationVisitor& astVi
 size_t ASTNode::getNodeID() const{
     return node_index;
 }
-CodeReference ASTNode::getReference() const {
+management::CodeReference ASTNode::getReference() const {
     return codeReference;
 }
 SymbolTable& ASTNode::getSymbolTable()  {
@@ -606,22 +607,22 @@ ASTNode::~ASTNode() = default ;
 StatementAST::StatementAST() {
     node_index = node_index_incrementer++ ;
 }
-StatementAST::StatementAST(CodeManager* manager) : StatementAST(){
+StatementAST::StatementAST(management::CodeManager* manager) : StatementAST(){
     this->codeManager = manager ;
 }
-StatementAST::StatementAST(CodeManager* manager, CodeReference codeReference1) : StatementAST(manager) {
+StatementAST::StatementAST(management::CodeManager* manager, management::CodeReference codeReference1) : StatementAST(manager) {
     this->codeReference = codeReference1 ;
 }
 
 ExpressionAST::ExpressionAST() {
     node_index = node_index_incrementer++ ;
 }
-ExpressionAST::ExpressionAST(CodeManager* manager):ExpressionAST() {
+ExpressionAST::ExpressionAST(management::CodeManager* manager):ExpressionAST() {
     this->codeManager = manager ;
 }
-ExpressionAST::ExpressionAST(CodeManager* manager, CodeReference codeReference1) : ExpressionAST(manager){
+ExpressionAST::ExpressionAST(management::CodeManager* manager, management::CodeReference codeReference1) : ExpressionAST(manager){
     this->codeReference = codeReference1 ;
 }
 
-} //namespace jitcompiler
+} //namespace jitcompiler::semantic
 //---------------------------------------------------------------------------

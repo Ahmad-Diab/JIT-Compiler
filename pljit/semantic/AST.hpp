@@ -1,14 +1,14 @@
 #ifndef PLJIT_AST_HPP
 #define PLJIT_AST_HPP
 //---------------------------------------------------------------------------
-#include "pljit/CodeManager.hpp"
-#include "pljit/ParseTree.hpp"
+#include "pljit/management/CodeManager.hpp"
+#include "pljit/syntax/ParseTree.hpp"
 #include <cassert>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
 
-namespace jitcompiler {
+namespace jitcompiler ::semantic{
 //---------------------------------------------------------------------------
 class StatementAST ;
 class IdentifierAST ;
@@ -20,18 +20,18 @@ class OptimizationVisitor ;
 class SymbolTable {
     private:
     bool isCompiled = true ;
-    CodeManager* codeManager ;
+    management::CodeManager* codeManager ;
 
     // get<0>(e) = code_ref , get<1>(e) = index in declaration list , get<2>(e) = value (for const declaration only)
     std::array
         <
-            std::unordered_map<std::string_view , std::tuple<CodeReference , size_t , std::optional<int64_t>>>
+            std::unordered_map<std::string_view , std::tuple<management::CodeReference , size_t , std::optional<int64_t>>>
         ,
             3
         > tableIdentifier ;
-    bool addAttributes(const ParameterDeclaration& declaration) ;
-    bool addAttributes(const VariableDeclaration& declaration) ;
-    bool addAttributes(const ConstantDeclaration& declaration) ;
+    bool addAttributes(const syntax::ParameterDeclaration& declaration) ;
+    bool addAttributes(const syntax::VariableDeclaration& declaration) ;
+    bool addAttributes(const syntax::ConstantDeclaration& declaration) ;
 
     public:
     enum AttributeType {
@@ -40,9 +40,9 @@ class SymbolTable {
         CONSTANT
     };
 
-    explicit SymbolTable(CodeManager* codeManager , const FunctionDeclaration& functionDeclaration) ;
+    explicit SymbolTable(management::CodeManager* codeManager , const syntax::FunctionDeclaration& functionDeclaration) ;
 
-    void insert(std::string_view identifier , AttributeType type, CodeReference codeReference , size_t index /*for parameter*/, std::optional<int64_t> value) ;
+    void insert(std::string_view identifier , AttributeType type, management::CodeReference codeReference , size_t index /*for parameter*/, std::optional<int64_t> value) ;
 
     bool isDeclared(std::string_view identifier) const ;
 
@@ -52,15 +52,15 @@ class SymbolTable {
 
     bool isComplied() const ;
 
-    std::array<std::unordered_map<std::string_view , std::tuple<CodeReference , size_t , std::optional<int64_t>>> , 3> & getTableContent()  ;
+    std::array<std::unordered_map<std::string_view , std::tuple<management::CodeReference , size_t , std::optional<int64_t>>> , 3> & getTableContent()  ;
 
 };
 
 class ASTNode {
     protected:
 
-        CodeReference codeReference ; // TODO supposed to be in Terminal node only
-        CodeManager* codeManager ;
+        management::CodeReference codeReference ; // TODO supposed to be in Terminal node only
+        management::CodeManager* codeManager ;
         std::unique_ptr<SymbolTable> symbolTable ;
 
         size_t node_index ;
@@ -89,7 +89,7 @@ class ASTNode {
 
     size_t getNodeID() const ;
 
-    CodeReference getReference() const ;
+    management::CodeReference getReference() const ;
 
     SymbolTable& getSymbolTable()  ;
 };
@@ -99,7 +99,7 @@ class FunctionAST final : public ASTNode {
     friend class OptimizationVisitor ;
     public:
 
-    explicit FunctionAST(CodeManager* manager) ;
+    explicit FunctionAST(management::CodeManager* manager) ;
 
     ASTNode::Type getType() const override;
 
@@ -109,7 +109,7 @@ class FunctionAST final : public ASTNode {
 
     std::optional<int64_t> evaluate(EvaluationContext& evaluationContext) const override ;
 
-    bool compileCode(const FunctionDeclaration& functionDeclaration) ;
+    bool compileCode(const syntax::FunctionDeclaration& functionDeclaration) ;
 
     const StatementAST& getStatement(size_t index) const ;
 
@@ -123,16 +123,16 @@ class StatementAST : public ASTNode {
 
     public:
     StatementAST()  ;
-    explicit StatementAST(CodeManager* manager) ;
-    explicit StatementAST(CodeManager* manager , CodeReference codeReference1) ;
+    explicit StatementAST(management::CodeManager* manager) ;
+    explicit StatementAST(management::CodeManager* manager , management::CodeReference codeReference1) ;
 
 };
 class ExpressionAST  : public ASTNode {
 
     public:
     explicit ExpressionAST() ;
-    explicit ExpressionAST(CodeManager* manager) ;
-    explicit ExpressionAST(CodeManager* manager , CodeReference codeReference1) ;
+    explicit ExpressionAST(management::CodeManager* manager) ;
+    explicit ExpressionAST(management::CodeManager* manager , management::CodeReference codeReference1) ;
 };
 class ReturnStatementAST final :public StatementAST {
     std::unique_ptr<ExpressionAST> input ;
@@ -140,7 +140,7 @@ class ReturnStatementAST final :public StatementAST {
     friend class OptimizationVisitor ;
     public:
     explicit ReturnStatementAST
-        (CodeManager* manager  , std::unique_ptr<ExpressionAST> input) ;
+        (management::CodeManager* manager  , std::unique_ptr<ExpressionAST> input) ;
 
     explicit ReturnStatementAST (std::unique_ptr<ExpressionAST> input) : input(std::move(input)){}
 
@@ -163,9 +163,9 @@ class AssignmentStatementAST final : public StatementAST {
 
     friend class OptimizationVisitor ;
     public:
-    explicit AssignmentStatementAST(CodeManager* manager);
+    explicit AssignmentStatementAST(management::CodeManager* manager);
 
-    explicit AssignmentStatementAST(CodeManager* manager ,
+    explicit AssignmentStatementAST(management::CodeManager* manager ,
                                     std::unique_ptr<IdentifierAST> left ,
                                     std::unique_ptr<ExpressionAST> right
                                     );
@@ -205,11 +205,11 @@ class BinaryExpressionAST final : public ExpressionAST {
     BinaryType binaryType ;
     public:
     explicit BinaryExpressionAST
-        (CodeManager* manager , BinaryType type , std::unique_ptr<ExpressionAST> left , std::unique_ptr<ExpressionAST> right) ;
+        (management::CodeManager* manager , BinaryType type , std::unique_ptr<ExpressionAST> left , std::unique_ptr<ExpressionAST> right) ;
     explicit BinaryExpressionAST
         (std::unique_ptr<ExpressionAST> left , std::unique_ptr<ExpressionAST> right) : leftExpression(move(left)) , rightExpression(move(right)) {}
     explicit BinaryExpressionAST
-        (CodeManager* manager , BinaryType type , std::unique_ptr<ExpressionAST> left , std::unique_ptr<ExpressionAST> right , CodeReference reference) ;
+        (management::CodeManager* manager , BinaryType type , std::unique_ptr<ExpressionAST> left , std::unique_ptr<ExpressionAST> right , management::CodeReference reference) ;
 
     BinaryType getBinaryType() const ;
 
@@ -243,7 +243,7 @@ class UnaryExpressionAST final : public ExpressionAST {
     UnaryType unaryType ;
     public:
     explicit UnaryExpressionAST
-        (CodeManager* manager  , CodeReference codeReference1 , UnaryType type , std::unique_ptr<ExpressionAST> input) ;
+        (management::CodeManager* manager  , management::CodeReference codeReference1 , UnaryType type , std::unique_ptr<ExpressionAST> input) ;
     explicit UnaryExpressionAST
         (std::unique_ptr<ExpressionAST> input) : input(std::move(input)) {}
 
@@ -265,7 +265,7 @@ class IdentifierAST final: public ExpressionAST {
 
     public:
     explicit IdentifierAST
-        (CodeManager* manager , CodeReference codeReference) ;
+        (management::CodeManager* manager , management::CodeReference codeReference) ;
 
     ASTNode::Type getType() const override;
 
@@ -283,7 +283,7 @@ class LiteralAST final :public ExpressionAST {
     friend class OptimizationVisitor ;
     public:
     explicit LiteralAST
-        (CodeManager* manager , CodeReference codeReference) ;
+        (management::CodeManager* manager , management::CodeReference codeReference) ;
 
     explicit LiteralAST (int64_t value) ;
 

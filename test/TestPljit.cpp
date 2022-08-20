@@ -5,6 +5,9 @@
 
 using namespace std ;
 using namespace jitcompiler ;
+using namespace jitcompiler ::management;
+using namespace jitcompiler ::syntax;
+using namespace jitcompiler ::semantic;
 
 TEST(TestPljit , TestLiteral) {
     Pljit pljit ;

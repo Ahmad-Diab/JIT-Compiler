@@ -1,12 +1,12 @@
-#include "pljit/ParseTree.hpp"
-#include "pljit/ParseTreeVisitor.hpp"
-#include "pljit/PrintParseTreeVisitor.hpp"
+#include "ParseTree.hpp"
+#include "ParseTreeVisitor.hpp"
+#include "PrintParseTreeVisitor.hpp"
 #include <iostream>
 #include <utility>
 //---------------------------------------------------------------------------
 using namespace std ;
 //---------------------------------------------------------------------------
-namespace jitcompiler {
+namespace jitcompiler ::syntax{
 
 size_t ParseTreeNode :: node_index_incrementer {0} ;
 
@@ -14,14 +14,14 @@ size_t ParseTreeNode::getNodeId() const{
     return node_index ;
 }
 
-CodeReference ParseTreeNode::getReference() const {
+management::CodeReference ParseTreeNode::getReference() const {
     return codeReference ;
 }
-CodeManager* ParseTreeNode::getManager() const {
+management::CodeManager* ParseTreeNode::getManager() const {
     return codeManager ;
 }
-std::string ParseTreeNode::print_dot() const {
-    PrintVisitor<true> printVisitor ;
+std::string ParseTreeNode::visualizeDot() const {
+    VisualizePrintVisitor printVisitor ;
     this->accept(printVisitor) ;
     std::string result = "digraph {\n" +  printVisitor.getOutput() + "}\n";
     return result ;
@@ -37,10 +37,10 @@ bool ParseTreeNode::compileCode(TokenStream& tokenStream) {
 
 ParseTreeNode::~ParseTreeNode()  = default ;
 
-TerminalNode::TerminalNode(CodeManager* manager) {
+TerminalNode::TerminalNode(management::CodeManager* manager) {
     codeManager = manager ;
 }
-TerminalNode::TerminalNode(CodeManager* manager ,CodeReference codeReference) {
+TerminalNode::TerminalNode(management::CodeManager* manager ,management::CodeReference codeReference) {
     this->codeManager = manager ;
     this->codeReference = move(codeReference);
 
@@ -51,7 +51,7 @@ std::string_view TerminalNode::print_token() const {
     size_t last = codeReference.getEndLineRange().second ;
     return codeManager->getCurrentLine(line).substr(begin , last - begin + 1) ;
 }
-NonTerminalNode::NonTerminalNode(CodeManager* manager) {
+NonTerminalNode::NonTerminalNode(management::CodeManager* manager) {
     codeManager = manager ;
 }
 const ParseTreeNode& NonTerminalNode::getChild(size_t index) const {
@@ -68,7 +68,7 @@ std::unique_ptr<ParseTreeNode> NonTerminalNode::releaseChild(size_t index) {
 ParseTreeNode::Type FunctionDeclaration::getType() const {
     return Type::FUNCTION_DECLARATION ;
 }
-FunctionDeclaration::FunctionDeclaration(CodeManager* manager) : NonTerminalNode(manager) {
+FunctionDeclaration::FunctionDeclaration(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool FunctionDeclaration::recursiveDecentParser(TokenStream& tokenStream) {
     { // PARAMETER
@@ -123,7 +123,7 @@ void FunctionDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type ParameterDeclaration::getType() const {
     return Type::PARAMETER_DECLARATION ;
 }
-ParameterDeclaration::ParameterDeclaration(CodeManager* manager) : NonTerminalNode(manager) {
+ParameterDeclaration::ParameterDeclaration(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool ParameterDeclaration::recursiveDecentParser(TokenStream& tokenStream) {
     {
@@ -185,7 +185,7 @@ bool ParameterDeclaration::recursiveDecentParser(TokenStream& tokenStream) {
 void ParameterDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
     parseTreeVisitor.visit(*this) ;
 }
-VariableDeclaration::VariableDeclaration(CodeManager* manager) : NonTerminalNode(manager) {
+VariableDeclaration::VariableDeclaration(management::CodeManager* manager) : NonTerminalNode(manager) {
     node_index = node_index_incrementer++ ;
 }
 ParseTreeNode::Type VariableDeclaration::getType() const {
@@ -250,7 +250,7 @@ void VariableDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type ConstantDeclaration::getType() const {
     return Type::CONSTANT_DECLARATION ;
 }
-ConstantDeclaration::ConstantDeclaration(CodeManager* manager) : NonTerminalNode(manager) {
+ConstantDeclaration::ConstantDeclaration(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool ConstantDeclaration::recursiveDecentParser(TokenStream& tokenStream) {
     {
@@ -312,7 +312,7 @@ void ConstantDeclaration::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type DeclartorList::getType() const {
     return Type::DECLARATOR_LIST ;
 }
-DeclartorList::DeclartorList(CodeManager* manager) : NonTerminalNode(manager) {
+DeclartorList::DeclartorList(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool DeclartorList::recursiveDecentParser(TokenStream& tokenStream) {
     {
@@ -346,7 +346,7 @@ void DeclartorList::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type InitDeclartorList::getType() const {
     return Type::INIT_DECLARATOR_LIST ;
 }
-InitDeclartorList::InitDeclartorList(CodeManager* manager) : NonTerminalNode(manager) {
+InitDeclartorList::InitDeclartorList(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool InitDeclartorList::recursiveDecentParser(TokenStream& tokenStream) {
     {
@@ -382,7 +382,7 @@ void InitDeclartorList::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type InitDeclartor::getType() const {
     return Type::INIT_DECLARATOR ;
 }
-InitDeclartor::InitDeclartor(CodeManager* manager) : NonTerminalNode(manager) {
+InitDeclartor::InitDeclartor(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool InitDeclartor::recursiveDecentParser(TokenStream& tokenStream) {
     {
@@ -429,7 +429,7 @@ void InitDeclartor::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type CompoundStatement::getType() const {
     return Type::COMPOUND_STATEMENT ;
 }
-CompoundStatement::CompoundStatement(CodeManager* manager) : NonTerminalNode(manager) {
+CompoundStatement::CompoundStatement(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool CompoundStatement::recursiveDecentParser(TokenStream& tokenStream) {
     {
@@ -502,7 +502,7 @@ void CompoundStatement::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type StatementList::getType() const {
     return Type::STATEMENT_LIST ;
 }
-StatementList::StatementList(CodeManager* manager) : NonTerminalNode(manager) {
+StatementList::StatementList(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool StatementList::recursiveDecentParser(TokenStream& tokenStream) {
     {
@@ -538,7 +538,7 @@ void StatementList::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type Statement::getType() const {
     return Type::STATEMENT ;
 }
-Statement::Statement(CodeManager* manager) : NonTerminalNode(manager) {
+Statement::Statement(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool Statement::recursiveDecentParser(TokenStream& tokenStream) {
     if(tokenStream.isEmpty()) {
@@ -591,7 +591,7 @@ void Statement::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type AdditiveExpression::getType() const {
     return Type::ADDITIVE_EXPRESSION ;
 }
-AdditiveExpression::AdditiveExpression(CodeManager* manager) : NonTerminalNode(manager) {
+AdditiveExpression::AdditiveExpression(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool AdditiveExpression::recursiveDecentParser(TokenStream& tokenStream) {
     {
@@ -628,7 +628,7 @@ void AdditiveExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type MultiplicativeExpression::getType() const {
     return Type::MULTIPLICATIVE_EXPRESSION ;
 }
-MultiplicativeExpression::MultiplicativeExpression(CodeManager* manager) : NonTerminalNode(manager) {
+MultiplicativeExpression::MultiplicativeExpression(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool MultiplicativeExpression::recursiveDecentParser(TokenStream& tokenStream) {
     {
@@ -663,7 +663,7 @@ void MultiplicativeExpression::accept(ParseTreeVisitor& parseTreeVisitor) const 
 ParseTreeNode::Type AssignmentExpression::getType() const {
     return Type::ASSIGNMENT_EXPRESSION ;
 }
-AssignmentExpression::AssignmentExpression(CodeManager* manager) : NonTerminalNode(manager) {
+AssignmentExpression::AssignmentExpression(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool AssignmentExpression::recursiveDecentParser(TokenStream& tokenStream) {
     {
@@ -705,7 +705,7 @@ void AssignmentExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type UnaryExpression::getType() const {
     return Type::UNARY_EXPRESSION ;
 }
-UnaryExpression::UnaryExpression(CodeManager* manager) : NonTerminalNode(manager) {
+UnaryExpression::UnaryExpression(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool UnaryExpression::recursiveDecentParser(TokenStream& tokenStream) {
     {
@@ -730,7 +730,7 @@ void UnaryExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type PrimaryExpression::getType() const {
     return Type::PRIMARY_EXPRESSION ;
 }
-PrimaryExpression::PrimaryExpression(CodeManager* manager) : NonTerminalNode(manager) {
+PrimaryExpression::PrimaryExpression(management::CodeManager* manager) : NonTerminalNode(manager) {
 }
 bool PrimaryExpression::recursiveDecentParser(TokenStream& tokenStream) {
     if(tokenStream.isEmpty())
@@ -795,7 +795,7 @@ void PrimaryExpression::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type Identifier::getType() const {
     return Type::IDENTIFIER;
 }
-Identifier::Identifier(CodeManager* manager) : TerminalNode(manager) {
+Identifier::Identifier(management::CodeManager* manager) : TerminalNode(manager) {
 }
 bool Identifier::recursiveDecentParser(TokenStream& tokenStream) {
     if(tokenStream.isEmpty()) {
@@ -816,7 +816,7 @@ bool Identifier::recursiveDecentParser(TokenStream& tokenStream) {
 void Identifier::accept(ParseTreeVisitor& parseTreeVisitor) const {
     parseTreeVisitor.visit(*this) ;
 }
-Literal::Literal(CodeManager* manager) : TerminalNode(manager) {
+Literal::Literal(management::CodeManager* manager) : TerminalNode(manager) {
 }
 ParseTreeNode::Type Literal::getType() const {
     return Type::LITERAL ;
@@ -843,7 +843,7 @@ void Literal::accept(ParseTreeVisitor& parseTreeVisitor) const {
 ParseTreeNode::Type GenericToken::getType() const {
     return Type::GENERIC_TOKEN ;
 }
-GenericToken::GenericToken(CodeManager* codeManager , CodeReference codeReference) : TerminalNode(codeManager , codeReference) {
+GenericToken::GenericToken(management::CodeManager* codeManager , management::CodeReference codeReference) : TerminalNode(codeManager , codeReference) {
     node_index = node_index_incrementer++ ;
 }
 bool GenericToken::recursiveDecentParser(TokenStream& /*tokenStream*/) {
@@ -853,5 +853,5 @@ bool GenericToken::recursiveDecentParser(TokenStream& /*tokenStream*/) {
 void GenericToken::accept(ParseTreeVisitor& parseTreeVisitor) const {
     parseTreeVisitor.visit(*this) ;
 }
-} // namespace jitcompiler
+} // namespace jitcompiler::syntax
 //---------------------------------------------------------------------------

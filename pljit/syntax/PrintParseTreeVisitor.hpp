@@ -4,10 +4,10 @@
 #include "ParseTree.hpp"
 #include "ParseTreeVisitor.hpp"
 #include <sstream>
-namespace jitcompiler{
+namespace jitcompiler ::syntax{
 //---------------------------------------------------------------------------
 /*
- * isLabeld-> true(for visualization) , false (for testing)
+ * isLabeled-> true(for visualization) , false (for testing)
  */
 template<bool isLabeled>
 class PrintVisitor ;
@@ -745,15 +745,12 @@ class PrintVisitor  : public ParseTreeVisitor {
     }
     void visit(const GenericToken& /*genericToken*/) override {}
 
-    void reset() {
-        buf.clear()  ;
-    }
     std::string getOutput() {
         return "digraph {\n" + buf.str() + "}\n" ;
     }
 };
 
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::syntax
 //---------------------------------------------------------------------------
 #endif //PLJIT_PRINTPARSETREEVISITOR_HPP

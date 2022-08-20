@@ -1,8 +1,8 @@
 #ifndef PLJIT_TOKENSTREAM_HPP
 #define PLJIT_TOKENSTREAM_HPP
 //---------------------------------------------------------------------------
-#include "CodeManager.hpp"
-namespace jitcompiler {
+#include "pljit/management/CodeManager.hpp"
+namespace jitcompiler ::syntax{
 //---------------------------------------------------------------------------
 
 class TokenStream {
@@ -25,16 +25,16 @@ public:
     };
     class Token {
         // TODO Replace with codeReference
-        CodeReference codeReference ;
+        management::CodeReference codeReference ;
         TokenType type ;
 
         public:
-        explicit Token(CodeReference reference , TokenType tokenType) : codeReference(std::move(reference)) , type(tokenType){}
-        CodeReference& getCodeReference()  ;
+        explicit Token(management::CodeReference reference , TokenType tokenType) : codeReference(std::move(reference)) , type(tokenType){}
+        management::CodeReference& getCodeReference()  ;
         TokenType getTokenType() const ;
     };
 
-    explicit TokenStream(CodeManager* currentManager) ;
+    explicit TokenStream(management::CodeManager* currentManager) ;
 
     Token lookup() const ; // rename lookup
 
@@ -44,15 +44,13 @@ public:
 
     void compileCode()  ;
 
-    void reset() ;
-
 private:
-    CodeManager *manager ;
+    management::CodeManager *manager ;
     std::vector<Token> streamTokens ;
     size_t iterator_token = 0 ;
 
 };
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::syntax
 //---------------------------------------------------------------------------
 #endif //PLJIT_TOKENSTREAM_HPP

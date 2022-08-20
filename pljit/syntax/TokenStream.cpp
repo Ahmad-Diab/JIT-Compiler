@@ -1,8 +1,7 @@
 #include "TokenStream.hpp"
 #include <array>
 #include <cassert>
-#include <cctype>
-#include <iostream>
+//#include <iostream>
 #include <optional>
 //---------------------------------------------------------------------------
 using namespace std ;
@@ -60,9 +59,9 @@ namespace {
         return std::nullopt ;
     }
 } // namespace
-namespace jitcompiler {
+namespace jitcompiler ::syntax{
 //---------------------------------------------------------------------------
-TokenStream::TokenStream(CodeManager* currentManager) : manager(currentManager)  {
+TokenStream::TokenStream(management::CodeManager* currentManager) : manager(currentManager)  {
 
 }
 void TokenStream::compileCode() {
@@ -77,7 +76,7 @@ void TokenStream::compileCode() {
                 std::optional<size_t> next_index = getNextIndex(currentLine , begin_index , end_index) ;
                 if(next_index) {
                     size_t current_index = next_index.value() ;
-                    CodeReference codeReference({line_index , begin_index} , {line_index , current_index - 1}) ;
+                    management::CodeReference codeReference({line_index , begin_index} , {line_index , current_index - 1}) ;
                     string_view currentToken = currentLine.substr(begin_index , current_index - begin_index) ;
                     assert(!currentToken.empty());
                     if(isKeyword(currentToken))
@@ -136,10 +135,7 @@ TokenStream::Token TokenStream::lookup() const {
 bool TokenStream::isEmpty() const {
     return iterator_token == streamTokens.size() ;
 }
-void TokenStream::reset() {
-    this->iterator_token = 0 ;
-}
-CodeReference& TokenStream::Token::getCodeReference() {
+management::CodeReference& TokenStream::Token::getCodeReference() {
     return codeReference;
 }
 TokenStream::TokenType TokenStream::Token::getTokenType() const {
@@ -147,5 +143,5 @@ TokenStream::TokenType TokenStream::Token::getTokenType() const {
 }
 
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::syntax
 //---------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 //---------------------------------------------------------------------------
 #include <cstddef>
 #include <utility>
-namespace jitcompiler {
+namespace jitcompiler::management {
 //---------------------------------------------------------------------------
 class CodeReference{
     private:
@@ -19,7 +19,7 @@ class CodeReference{
 };
 
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::management
 //---------------------------------------------------------------------------
 
 #endif //PLJIT_CODEREFERENCE_HPP

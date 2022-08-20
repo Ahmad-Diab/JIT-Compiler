@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string_view>
 #include <vector>
-namespace jitcompiler{
+namespace jitcompiler ::management{
 //---------------------------------------------------------------------------
 class CodeManager
 {
@@ -39,6 +39,6 @@ class CodeManager
     std::string runtimeErrorMessage();
 };
 //---------------------------------------------------------------------------
-} //namespace jitcompiler
+} //namespace jitcompiler::management
 //---------------------------------------------------------------------------
 #endif //PLJIT_CODEMANAGER_HPP

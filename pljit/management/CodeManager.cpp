@@ -4,7 +4,7 @@
 //---------------------------------------------------------------------------
 using namespace std ;
 //---------------------------------------------------------------------------
-namespace jitcompiler{
+namespace jitcompiler ::management{
 
 CodeManager::CodeManager(string_view sourceCode) {
     for(size_t i = 0 , j = 0 , code_size = sourceCode.size() ;i < code_size && j < code_size ; i++ , j++) {
@@ -151,5 +151,5 @@ std::string CodeManager::runtimeErrorMessage() {
     return res ;
 }
 
-} // namespace jitcompiler
+} // namespace jitcompiler::management
 //---------------------------------------------------------------------------

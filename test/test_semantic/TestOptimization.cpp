@@ -1,14 +1,17 @@
 #include <gtest/gtest.h>
 
-#include "pljit/AST.hpp"
-#include "pljit/CodeManager.hpp"
-#include "pljit/ParseTree.hpp"
-#include "pljit/TokenStream.hpp"
-#include "pljit/OptimizationASTVisitor.hpp"
-#include "pljit/PrintASTVisitor.hpp"
+#include "pljit/management/CodeManager.hpp"
+#include "pljit/semantic/AST.hpp"
+#include "pljit/semantic/OptimizationASTVisitor.hpp"
+#include "pljit/semantic/PrintASTVisitor.hpp"
+#include "pljit/syntax/ParseTree.hpp"
+#include "pljit/syntax/TokenStream.hpp"
 
 using namespace std ;
 using namespace jitcompiler ;
+using namespace jitcompiler ::management;
+using namespace jitcompiler ::syntax;
+using namespace jitcompiler ::semantic;
 
 TEST(TestOptimization , TestDeadCodeElimination) {
     constexpr string_view code =

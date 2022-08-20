@@ -2,7 +2,7 @@
 #define PLJIT_ASTVISITOR_HPP
 
 //---------------------------------------------------------------------------
-namespace jitcompiler {
+namespace jitcompiler ::semantic{
 //---------------------------------------------------------------------------
 class FunctionAST ;
 class ReturnStatementAST ;
@@ -24,7 +24,7 @@ class ASTVisitor {
 };
 
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::semantic
 //---------------------------------------------------------------------------
 
 #endif //PLJIT_ASTVISITOR_HPP

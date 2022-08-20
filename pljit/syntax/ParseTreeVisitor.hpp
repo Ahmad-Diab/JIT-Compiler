@@ -2,7 +2,7 @@
 #define PLJIT_PARSETREEVISITOR_HPP
 
 //---------------------------------------------------------------------------
-namespace jitcompiler{
+namespace jitcompiler ::syntax{
 //---------------------------------------------------------------------------
 
 class FunctionDeclaration ;
@@ -48,7 +48,7 @@ class ParseTreeVisitor{
 
 
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::syntax
 //---------------------------------------------------------------------------
 
 #endif //PLJIT_PARSETREEVISITOR_HPP

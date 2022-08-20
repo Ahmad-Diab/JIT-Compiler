@@ -1,11 +1,11 @@
-#include "pljit/EvaluationContext.hpp"
-#include "pljit/AST.hpp"
+#include "EvaluationContext.hpp"
+#include "AST.hpp"
 #include <cassert>
 #include <iostream>
 
 using namespace std ;
 //---------------------------------------------------------------------------
-namespace jitcompiler {
+namespace jitcompiler ::semantic{
 //---------------------------------------------------------------------------
 void EvaluationContext::pushParameter(std::string_view identifier) {
     assert(parameters.find(identifier) == parameters.end()) ;

@@ -1,12 +1,12 @@
 #ifndef PLJIT_OPTIMIZATIONASTVISITOR_HPP
 #define PLJIT_OPTIMIZATIONASTVISITOR_HPP
 
-#include "pljit/EvaluationContext.hpp"
+#include "EvaluationContext.hpp"
 #include <cstdint>
 #include <optional>
 
 //---------------------------------------------------------------------------
-namespace jitcompiler {
+namespace jitcompiler ::semantic{
 //---------------------------------------------------------------------------
 
 class FunctionAST ;
