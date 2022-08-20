@@ -82,5 +82,5 @@ std::optional<int64_t> OptimizationVisitor::visitOptimization(LiteralAST& litera
 }
 
 //---------------------------------------------------------------------------
-}// namespace jitcompiler
+} // namespace jitcompiler::semantic
 //---------------------------------------------------------------------------

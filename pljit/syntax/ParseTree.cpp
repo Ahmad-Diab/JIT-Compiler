@@ -13,7 +13,7 @@ size_t ParseTreeNode :: node_index_incrementer {0} ;
 size_t ParseTreeNode::getNodeId() const{
     return node_index ;
 }
-
+// Organization
 management::CodeReference ParseTreeNode::getReference() const {
     return codeReference ;
 }

@@ -88,5 +88,5 @@ EvaluationContext::EvaluationContext(SymbolTable& symbolTable) {
 }
 
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::semantic
 //---------------------------------------------------------------------------

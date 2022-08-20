@@ -298,6 +298,6 @@ class LiteralAST final :public ExpressionAST {
     std::optional<int64_t> acceptOptimization(OptimizationVisitor& astVisitor)  override ;
 };
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::semantic
 //---------------------------------------------------------------------------
 #endif //PLJIT_AST_HPP

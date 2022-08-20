@@ -243,7 +243,7 @@ class PrintASTVisitor final : public ASTVisitor {
 };
 
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::semantic
 //---------------------------------------------------------------------------
 
 #endif //PLJIT_PRINTASTVISITOR_HPP

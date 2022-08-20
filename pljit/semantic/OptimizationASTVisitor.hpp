@@ -34,6 +34,6 @@ class OptimizationVisitor {
 
 };
 //---------------------------------------------------------------------------
-} // namespace jitcompiler
+} // namespace jitcompiler::semantic
 //---------------------------------------------------------------------------
 #endif //PLJIT_OPTIMIZATIONASTVISITOR_HPP
