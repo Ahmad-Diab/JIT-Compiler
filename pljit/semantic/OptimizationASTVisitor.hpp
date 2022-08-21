@@ -1,14 +1,13 @@
 #ifndef PLJIT_OPTIMIZATIONASTVISITOR_HPP
 #define PLJIT_OPTIMIZATIONASTVISITOR_HPP
-
-#include "EvaluationContext.hpp"
+//---------------------------------------------------------------------------
+#include "pljit/semantic/EvaluationContext.hpp"
+//---------------------------------------------------------------------------
 #include <cstdint>
 #include <optional>
-
 //---------------------------------------------------------------------------
 namespace jitcompiler ::semantic{
 //---------------------------------------------------------------------------
-
 class FunctionAST ;
 class ReturnStatementAST ;
 class AssignmentStatementAST ;
@@ -16,13 +15,13 @@ class BinaryExpressionAST ;
 class UnaryExpressionAST ;
 class IdentifierAST ;
 class LiteralAST ;
-
+//---------------------------------------------------------------------------
 class OptimizationVisitor {
-
+    // evaluation context used for optimization within each statement to return constant expression
     EvaluationContext evaluationContext ;
 
     public:
-    OptimizationVisitor() = default;
+    OptimizationVisitor();
 
     std::optional<int64_t> visitOptimization(FunctionAST& functionAst) ;
     std::optional<int64_t> visitOptimization(ReturnStatementAST& returnStatementAst)  ;

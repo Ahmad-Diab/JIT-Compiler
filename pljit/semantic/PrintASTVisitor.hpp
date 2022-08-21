@@ -1,8 +1,8 @@
 #ifndef PLJIT_PRINTASTVISITOR_HPP
 #define PLJIT_PRINTASTVISITOR_HPP
 
-#include "ASTVisitor.hpp"
-#include "AST.hpp"
+#include "pljit/semantic/ASTVisitor.hpp"
+#include "pljit/semantic/AST.hpp"
 #include <sstream>
 
 //---------------------------------------------------------------------------
@@ -17,11 +17,12 @@ using VisualizeASTVisitor = PrintASTVisitor<true> ;
 template<bool isLabeled>
 class PrintASTVisitor final : public ASTVisitor {
     private:
+    // output stream to save the result of dot format
     std::ostringstream buf ;
     private:
     void print_expression(const ASTNode& parentNode , const ExpressionAST& expressionAst , const std::string_view parentLabel = "") {
-        switch (expressionAst.getType()) {
-            case ASTNode::Type::BINARY_EXPRESSION:
+        switch (expressionAst.getAstType()) {
+            case ASTNode::ASTType::BINARY_EXPRESSION:
             {
                 const BinaryExpressionAST& curChild = static_cast<const BinaryExpressionAST&>(expressionAst)  ;
                 if(isLabeled) {
@@ -47,7 +48,7 @@ class PrintASTVisitor final : public ASTVisitor {
                 }
             }
             break ;
-            case ASTNode::Type::UNARY_EXPRESSION:
+            case ASTNode::ASTType::UNARY_EXPRESSION:
             {
                 const UnaryExpressionAST& curChild = static_cast<const UnaryExpressionAST&>(expressionAst)  ;
                 if(isLabeled) {
@@ -69,7 +70,7 @@ class PrintASTVisitor final : public ASTVisitor {
                 }
             }
             break ;
-            case ASTNode::Type::IDENTIFIER :
+            case ASTNode::ASTType::IDENTIFIER :
             {
                 const IdentifierAST& curChild = static_cast<const IdentifierAST&>(expressionAst)  ;
                 if(isLabeled) {
@@ -82,7 +83,7 @@ class PrintASTVisitor final : public ASTVisitor {
                 }
             }
             break ;
-            case ASTNode::Type::LITERAL:
+            case ASTNode::ASTType::LITERAL:
             {
                 const LiteralAST& curChild = static_cast<const LiteralAST&>(expressionAst)  ;
                 if(isLabeled) {
@@ -100,13 +101,14 @@ class PrintASTVisitor final : public ASTVisitor {
     }
 
     public:
+    //---------------------------------------------------------------------------
     void visit(const FunctionAST& functionAst) override {
         if(isLabeled)
             buf << '\t' <<  functionAst.getNodeID() << " [label=\"" << "Function" << "\"];\n" ;
 
-        for(size_t index = 0 ; index < functionAst.statement_size() ; ++index) {
+        for(size_t index = 0 ; index < functionAst.num_statements() ; ++index) {
             const StatementAST& curChild = functionAst.getStatement(index) ;
-            if(curChild.getType() == ASTNode::Type::RETURN_STATEMENT) {
+            if(curChild.getAstType() == ASTNode::ASTType::RETURN_STATEMENT) {
                 if(isLabeled) {
                     buf << '\t' << curChild.getNodeID() << " [label=\""
                         << "Return Statement"
@@ -130,11 +132,12 @@ class PrintASTVisitor final : public ASTVisitor {
                 }
             }
         }
-        for(size_t index = 0 ; index < functionAst.statement_size() ; ++index) {
+        for(size_t index = 0 ; index < functionAst.num_statements() ; ++index) {
             const StatementAST& curChild = functionAst.getStatement(index) ;
             curChild.accept(*this);
         }
     }
+    //---------------------------------------------------------------------------
     void visit(const ReturnStatementAST& returnStatementAst) override {
         if(isLabeled)
             print_expression(returnStatementAst, returnStatementAst.getInput());
@@ -142,6 +145,7 @@ class PrintASTVisitor final : public ASTVisitor {
             print_expression(returnStatementAst, returnStatementAst.getInput() , "Return Statement");
         returnStatementAst.getInput().accept(*this);
     }
+    //---------------------------------------------------------------------------
     void visit(const AssignmentStatementAST& assignmentStatementAst) override {
         const IdentifierAST& identifierAst = static_cast<const IdentifierAST&>(assignmentStatementAst.getLeftIdentifier()) ;
         const ExpressionAST& expressionAst = static_cast<const ExpressionAST&>(assignmentStatementAst.getRightExpression()) ;
@@ -159,6 +163,7 @@ class PrintASTVisitor final : public ASTVisitor {
         expressionAst.accept(*this) ;
 
     }
+    //---------------------------------------------------------------------------
     void visit(const BinaryExpressionAST& binaryExpressionAst) override {
         const ExpressionAST& leftExpression = binaryExpressionAst.getLeftExpression() ;
         const ExpressionAST& rightExpression = binaryExpressionAst.getRightExpression() ;
@@ -199,6 +204,7 @@ class PrintASTVisitor final : public ASTVisitor {
         rightExpression.accept(*this) ;
 
     }
+    //---------------------------------------------------------------------------
     void visit(const UnaryExpressionAST& unaryExpressionAst) override
     {
         const ExpressionAST& expressionAst = unaryExpressionAst.getInput() ;
@@ -221,25 +227,22 @@ class PrintASTVisitor final : public ASTVisitor {
             }
         }
         expressionAst.accept(*this) ;
-
     }
+    //---------------------------------------------------------------------------
     void visit(const IdentifierAST& identifierAst) override {
         if(!isLabeled)
             buf << "\tIdentifier -> \"" << identifierAst.print_token() << "\";\n" ;
     }
-
+    //---------------------------------------------------------------------------
     void visit(const LiteralAST& literalAst) override {
         if(!isLabeled)
             buf << "\tLiteral -> \"" << literalAst.getValue() << "\";\n" ;
     }
-
-    void reset()  {
-        buf.clear() ;
-    }
+    //---------------------------------------------------------------------------
     std::string getOutput() {
         return "digraph {\n" + buf.str() + "}\n" ;
-
     }
+    //---------------------------------------------------------------------------
 };
 
 //---------------------------------------------------------------------------

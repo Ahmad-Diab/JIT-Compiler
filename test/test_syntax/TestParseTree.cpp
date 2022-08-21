@@ -153,7 +153,7 @@ TEST(TestParseTree , TestPrimaryExpression) {
                                                          "\tunary-expression -> primary-expression;\n"
                                                          "\tprimary-expression -> literal;\n"
                                                          "\tliteral -> \"1213\";\n"
-                                                         "}\n"};
+                                                          "}\n"};
         constexpr array<string_view, 4> expectedMult = {"digraph {\n"
                                                         "\tmultiplicative-expression -> unary-expression;\n"
                                                         "\tunary-expression -> primary-expression;\n"
@@ -1153,7 +1153,7 @@ TEST(TestParseTree , TestInitDeclarator) {
         CodeManager manager(declarator);
         TokenStream lexicalAnalyzer(&manager);
         lexicalAnalyzer.compileCode();
-        InitDeclartor initDeclarator(&manager);
+        InitDeclarator initDeclarator(&manager);
         ASSERT_TRUE(initDeclarator.compileCode(lexicalAnalyzer));
         ASSERT_TRUE(!manager.isCodeError());
         TestPrintVisitor printVisitor;
@@ -1196,7 +1196,7 @@ TEST(TestParseTree , TestInitDeclarator) {
                 CodeManager manager(initDeclarator);
                 TokenStream tokenStream(&manager);
                 tokenStream.compileCode();
-                InitDeclartor parseTreeNode(&manager);
+                InitDeclarator parseTreeNode(&manager);
                 ASSERT_TRUE(!parseTreeNode.compileCode(tokenStream));
                 ASSERT_TRUE(manager.isCodeError());
                 ASSERT_EQ(expected, manager.error_message());
@@ -1205,7 +1205,7 @@ TEST(TestParseTree , TestInitDeclarator) {
                 CodeManager manager(initDeclarator) ;
                 TokenStream tokenStream(&manager) ;
                 tokenStream.compileCode() ;
-                InitDeclartorList parseTreeNode(&manager) ;
+                InitDeclaratorList parseTreeNode(&manager) ;
                 ASSERT_TRUE(!parseTreeNode.compileCode(tokenStream)) ;
                 ASSERT_TRUE(manager.isCodeError()) ;
                 ASSERT_EQ(expected , manager.error_message()) ;
@@ -1248,7 +1248,7 @@ TEST(TestParseTree , TestInitDeclaratorList) {
             CodeManager manager(declarator);
             TokenStream lexicalAnalyzer(&manager);
             lexicalAnalyzer.compileCode();
-            InitDeclartorList initDeclaratorList(&manager);
+            InitDeclaratorList initDeclaratorList(&manager);
             ASSERT_TRUE(initDeclaratorList.compileCode(lexicalAnalyzer));
             ASSERT_TRUE(!manager.isCodeError());
             TestPrintVisitor printVisitor;
@@ -1273,7 +1273,7 @@ TEST(TestParseTree , TestInitDeclaratorList) {
             CodeManager manager(initDeclarator) ;
             TokenStream tokenStream(&manager) ;
             tokenStream.compileCode() ;
-            InitDeclartorList parseTreeNode(&manager) ;
+            InitDeclaratorList parseTreeNode(&manager) ;
             ASSERT_TRUE(!parseTreeNode.compileCode(tokenStream)) ;
             ASSERT_TRUE(manager.isCodeError()) ;
             ASSERT_EQ(expected , manager.error_message()) ;
@@ -1303,11 +1303,11 @@ TEST(TestParseTree , TestDeclaratorList) {
             CodeManager manager(declarator);
             TokenStream lexicalAnalyzer(&manager);
             lexicalAnalyzer.compileCode();
-            DeclartorList declartorList(&manager);
-            ASSERT_TRUE(declartorList.compileCode(lexicalAnalyzer));
+            DeclaratorList declaratorList(&manager);
+            ASSERT_TRUE(declaratorList.compileCode(lexicalAnalyzer));
             ASSERT_TRUE(!manager.isCodeError());
             TestPrintVisitor printVisitor;
-            declartorList.accept(printVisitor);
+            declaratorList.accept(printVisitor);
             ASSERT_EQ(expectedDot, printVisitor.getOutput());
         }
     }
@@ -1331,7 +1331,7 @@ TEST(TestParseTree , TestDeclaratorList) {
             CodeManager manager(initDeclarator) ;
             TokenStream tokenStream(&manager) ;
             tokenStream.compileCode() ;
-            DeclartorList parseTreeNode(&manager) ;
+            DeclaratorList parseTreeNode(&manager) ;
             ASSERT_TRUE(!parseTreeNode.compileCode(tokenStream)) ;
             ASSERT_TRUE(manager.isCodeError()) ;
             ASSERT_EQ(expected , manager.error_message()) ;
@@ -1378,7 +1378,7 @@ TEST(TestParseTree , TestConstantDeclaration) {
             TokenStream lexicalAnalyzer(&manager);
             lexicalAnalyzer.compileCode();
             ConstantDeclaration constantDeclaration(&manager);
-            ASSERT_TRUE(!constantDeclaration.recursiveDecentParser(lexicalAnalyzer));
+            ASSERT_TRUE(!constantDeclaration.compileCode(lexicalAnalyzer));
             ASSERT_TRUE(!manager.isCodeError());
         }
     }
@@ -1453,7 +1453,7 @@ TEST(TestParseTree , TestVariableDeclaration) {
             TokenStream lexicalAnalyzer(&manager);
             lexicalAnalyzer.compileCode();
             VariableDeclaration variableDeclaration(&manager);
-            ASSERT_TRUE(!variableDeclaration.recursiveDecentParser(lexicalAnalyzer));
+            ASSERT_TRUE(!variableDeclaration.compileCode(lexicalAnalyzer));
             ASSERT_TRUE(!manager.isCodeError());
         }
     }
@@ -1524,7 +1524,7 @@ TEST(TestParseTree , TestParameterDeclaration) {
             TokenStream lexicalAnalyzer(&manager);
             lexicalAnalyzer.compileCode();
             ParameterDeclaration parameterDeclaration(&manager);
-            ASSERT_TRUE(!parameterDeclaration.recursiveDecentParser(lexicalAnalyzer));
+            ASSERT_TRUE(!parameterDeclaration.compileCode(lexicalAnalyzer));
             ASSERT_TRUE(!manager.isCodeError());
         }
     }

@@ -1,11 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "pljit/management/CodeManager.hpp"
 #include "pljit/semantic/AST.hpp"
-#include "pljit/semantic/OptimizationASTVisitor.hpp"
 #include "pljit/semantic/PrintASTVisitor.hpp"
-#include "pljit/syntax/ParseTree.hpp"
-#include "pljit/syntax/TokenStream.hpp"
+#include "pljit/semantic/OptimizationASTVisitor.hpp"
 
 using namespace std ;
 using namespace jitcompiler ;

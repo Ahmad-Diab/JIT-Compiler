@@ -1,23 +1,25 @@
 #ifndef PLJIT_PRINTPARSETREEVISITOR_HPP
 #define PLJIT_PRINTPARSETREEVISITOR_HPP
 //---------------------------------------------------------------------------
-#include "ParseTree.hpp"
-#include "ParseTreeVisitor.hpp"
+#include "pljit/syntax/ParseTreeVisitor.hpp"
 #include <sstream>
 namespace jitcompiler ::syntax{
 //---------------------------------------------------------------------------
 /*
  * isLabeled-> true(for visualization) , false (for testing)
+ *
+ * ParseTreeNode is traversed as preorder dfs traversal
  */
 template<bool isLabeled>
 class PrintVisitor ;
 
-using TestPrintVisitor = PrintVisitor<false> ; // recommended for testing
+using TestPrintVisitor = PrintVisitor<false> ; // recommended for testing (can be trace in preorder dfs traversal)
 using VisualizePrintVisitor = PrintVisitor<true> ; // recommended for visualization in DOT format (Not readable)
 
 template<bool isLabeled>
 class PrintVisitor  : public ParseTreeVisitor {
     private:
+    // output stream to save the result of dot format
     std::ostringstream buf ;
     public:
     void visit(const FunctionDeclaration& functionDeclaration) override {
@@ -212,9 +214,9 @@ class PrintVisitor  : public ParseTreeVisitor {
             curChild.accept(*this) ;
         }
     }
-    void visit(const DeclartorList& declartorList) override {
-        for (size_t indexChild = 0; indexChild < declartorList.num_children(); ++indexChild) {
-            const ParseTreeNode& curChild = declartorList.getChild(indexChild);
+    void visit(const DeclaratorList& declaratorList) override {
+        for (size_t indexChild = 0; indexChild < declaratorList.num_children(); ++indexChild) {
+            const ParseTreeNode& curChild = declaratorList.getChild(indexChild);
             switch (curChild.getType()) {
                 case ParseTreeNode::Type::IDENTIFIER:
                 {
@@ -222,7 +224,7 @@ class PrintVisitor  : public ParseTreeVisitor {
                         buf << '\t' << curChild.getNodeId() << " [label=\""
                             << "identifier"
                             << "\"];\n";
-                        buf << '\t' << declartorList.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
+                        buf << '\t' << declaratorList.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
                     }
                     else {
                         buf << '\t' << "declarator-list" << " -> " << "identifier"<< ";\n";
@@ -235,7 +237,7 @@ class PrintVisitor  : public ParseTreeVisitor {
                     const GenericToken& genericToken = static_cast<const GenericToken&> (curChild) ;
                     if(isLabeled) {
                         buf << '\t' << curChild.getNodeId() << " [label=\"" << genericToken.print_token() << "\"];\n";
-                        buf << '\t' << declartorList.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
+                        buf << '\t' << declaratorList.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
                     }
                     else {
                         buf << '\t' << "declarator-list" << " -> " << genericToken.print_token()<< ";\n";
@@ -245,15 +247,15 @@ class PrintVisitor  : public ParseTreeVisitor {
                 default: break ;
             }
         }
-        for(size_t indexChild = 0 ; indexChild < declartorList.num_children() ; ++ indexChild)
+        for(size_t indexChild = 0 ; indexChild < declaratorList.num_children() ; ++ indexChild)
         {
-            const ParseTreeNode& curChild = declartorList.getChild(indexChild) ;
+            const ParseTreeNode& curChild = declaratorList.getChild(indexChild) ;
             curChild.accept(*this) ;
         }
     }
-    void visit(const InitDeclartorList& initDeclartorList) override {
-        for (size_t indexChild = 0; indexChild < initDeclartorList.num_children(); ++indexChild) {
-            const ParseTreeNode& curChild = initDeclartorList.getChild(indexChild);
+    void visit(const InitDeclaratorList& initDeclaratorList) override {
+        for (size_t indexChild = 0; indexChild < initDeclaratorList.num_children(); ++indexChild) {
+            const ParseTreeNode& curChild = initDeclaratorList.getChild(indexChild);
             switch (curChild.getType()) {
                 case ParseTreeNode::Type::INIT_DECLARATOR:
                 {
@@ -261,7 +263,7 @@ class PrintVisitor  : public ParseTreeVisitor {
                         buf << '\t' << curChild.getNodeId() << " [label=\""
                             << "init-declarator"
                             << "\"];\n";
-                        buf << '\t' << initDeclartorList.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
+                        buf << '\t' << initDeclaratorList.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
                     }
                     else {
                         buf << '\t' << "init-declarator-list" << " -> " << "init-declarator" << ";\n";
@@ -274,7 +276,7 @@ class PrintVisitor  : public ParseTreeVisitor {
                     const GenericToken& genericToken = static_cast<const GenericToken&> (curChild) ;
                     if(isLabeled) {
                         buf << '\t' << curChild.getNodeId() << " [label=\"" << genericToken.print_token() << "\"];\n";
-                        buf << '\t' << initDeclartorList.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
+                        buf << '\t' << initDeclaratorList.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
                     }
                     else {
                         buf << '\t' << "init-declarator-list" << " -> " <<  genericToken.print_token()  << ";\n";
@@ -284,22 +286,22 @@ class PrintVisitor  : public ParseTreeVisitor {
                 default: break ;
             }
         }
-        for(size_t indexChild = 0 ; indexChild < initDeclartorList.num_children() ; ++ indexChild)
+        for(size_t indexChild = 0 ; indexChild < initDeclaratorList.num_children() ; ++ indexChild)
         {
-            const ParseTreeNode& curChild = initDeclartorList.getChild(indexChild) ;
+            const ParseTreeNode& curChild = initDeclaratorList.getChild(indexChild) ;
             curChild.accept(*this) ;
         }
     }
-    void visit(const InitDeclartor& initDeclartor) override  {
-        for(size_t indexChild = 0 ; indexChild < initDeclartor.num_children() ; ++indexChild) {
-            const ParseTreeNode& curChild = initDeclartor.getChild(indexChild) ;
+    void visit(const InitDeclarator& initDeclarator) override  {
+        for(size_t indexChild = 0 ; indexChild < initDeclarator.num_children() ; ++indexChild) {
+            const ParseTreeNode& curChild = initDeclarator.getChild(indexChild) ;
             switch (curChild.getType()) {
                 case ParseTreeNode::Type::IDENTIFIER :{
                     if(isLabeled) {
                         buf << '\t' << curChild.getNodeId() << " [label=\""
                             << "identifier"
                             << "\"];\n";
-                        buf << '\t' << initDeclartor.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
+                        buf << '\t' << initDeclarator.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
                     }else {
                         buf << '\t' << "init-declarator" << " -> " << "identifier" << ";\n";
                     }
@@ -310,7 +312,7 @@ class PrintVisitor  : public ParseTreeVisitor {
                     const GenericToken& genericToken = static_cast<const GenericToken&>(curChild) ;
                     if(isLabeled) {
                         buf << '\t' << curChild.getNodeId() << "[label=\"" << genericToken.print_token() << "\"];\n";
-                        buf << '\t' << initDeclartor.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
+                        buf << '\t' << initDeclarator.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
                     }
                     else {
                         buf << '\t' << "init-declarator" << " -> " << genericToken.print_token() << ";\n";
@@ -323,7 +325,7 @@ class PrintVisitor  : public ParseTreeVisitor {
                         buf << '\t' << curChild.getNodeId() << " [label=\""
                             << "literal"
                             << "\"];\n";
-                        buf << '\t' << initDeclartor.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
+                        buf << '\t' << initDeclarator.getNodeId() << " -> " << curChild.getNodeId() << ";\n";
                     }
                     else {
                         buf << '\t' << "init-declarator" << " -> " << "literal" << ";\n";
@@ -333,9 +335,9 @@ class PrintVisitor  : public ParseTreeVisitor {
                 default: break ;
             }
         }
-        for(size_t index = 0 ; index < initDeclartor.num_children() ; ++index)
+        for(size_t index = 0 ; index < initDeclarator.num_children() ; ++index)
         {
-            const ParseTreeNode& curChild = initDeclartor.getChild(index) ;
+            const ParseTreeNode& curChild = initDeclarator.getChild(index) ;
             curChild.accept(*this) ;
         }
     }

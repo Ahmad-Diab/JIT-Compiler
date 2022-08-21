@@ -13,7 +13,6 @@ class SymbolTable ;
 
 class EvaluationContext {
 
-    SymbolTable* symbolTable;
     std::unordered_map<std::string_view , std::optional<int64_t>> parameters ;
     std::unordered_map<std::string_view , std::optional<int64_t>> variables ;
     std::unordered_map<std::string_view , std::optional<int64_t>> constants ;
@@ -25,10 +24,11 @@ class EvaluationContext {
     public:
     explicit EvaluationContext() = default ;
     explicit EvaluationContext(SymbolTable & symbolTable) ;
-    explicit EvaluationContext(std::vector<int64_t >& parameterList , SymbolTable & symbolTable) ;
+    explicit EvaluationContext(std::vector<int64_t > parameterList ,SymbolTable & symbolTable) ;
 
+    /// update variable or parameter over each assignment statement
     void updateIdentifier(std::string_view identifier, int64_t value) ;
-
+    /// get value of an identifier within evaluation context
     std::optional<int64_t> getIdentifier(std::string_view identifier) ;
 
 };

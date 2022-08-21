@@ -152,7 +152,6 @@ TEST(TestPljit , TestThreadSafe){
     vector<thread> threads ;
     std::unordered_map<int64_t , uint64_t> mpThread ;
     std::mutex mapMutex ;
-
     for(int64_t a = 0 ; a <= 15 ; a++)
         for(int64_t b = 0 ; b <= 10 ; b++) {
             threads.emplace_back([&func , &mpThread , &mapMutex , a ,b] {
@@ -198,7 +197,7 @@ TEST(TestPljit , TestHeavyMultipleCases) {
     Pljit pljit ;
     auto func = pljit.registerFunction(code) ;
     std::unordered_map<int64_t , uint64_t> mpExpected ;
-    for(int64_t yb = 0 ; yb <= 15000 ; yb ++) {
+    for(int64_t yb = 0 ; yb <= 1500 ; yb ++) {
         int64_t y = (3 - yb) * (3 - yb) ;
         if(y == 0) continue ;
         mpExpected[900 / y]++;
@@ -208,12 +207,11 @@ TEST(TestPljit , TestHeavyMultipleCases) {
     std::unordered_map<int64_t , uint64_t> mpThread ;
     std::mutex mapMutex ;
 
-    for(int64_t yb = 0 ; yb <= 15000 ; yb++)
+    for(int64_t yb = 0 ; yb <= 1500 ; yb++)
     {
         threads.emplace_back([&func , &mpThread , &mapMutex , yb] {
             std::pair<std::optional<int64_t> , std::string> f = func({yb});
-            if(yb != 3)
-            {
+            if(yb != 3) {
                 ASSERT_TRUE(f.first.has_value()) ;
                 // since standard library is not thread safe
                 std::unique_lock lock(mapMutex) ;

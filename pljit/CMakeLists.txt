@@ -1,7 +1,6 @@
 set(PLJIT_SOURCES
     # add your source files here
         management/CodeManager.cpp syntax/TokenStream.cpp syntax/ParseTree.cpp management/CodeReference.cpp semantic/AST.cpp semantic/OptimizationASTVisitor.cpp semantic/EvaluationContext.cpp
-        syntax/PrintParseTreeVisitor.hpp semantic/PrintASTVisitor.hpp
         )
 
 
