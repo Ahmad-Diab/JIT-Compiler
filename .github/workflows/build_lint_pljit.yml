@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Clang-Tidy
-        uses: runmymind/clang-tidy-action@v1
+        uses: llvm/clang-tidy-action@v1
 
       - name: Create and Lint PLJIT
         run: |
