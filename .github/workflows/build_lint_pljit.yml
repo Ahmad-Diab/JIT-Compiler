@@ -1,0 +1,45 @@
+name: Build and Lint PLJIT
+
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pljit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up CMake
+        uses: scf4/cmake-action@v1
+        with:
+          cmake-version: '3.x'
+
+      - name: Create and Build PLJIT
+        run: |
+          mkdir ci_build_pljit
+          cd ci_build_pljit
+          cmake -DCMAKE_BUILD_TYPE=Debug ..
+          make
+          ./test/tester
+
+  lint_pljit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Clang-Tidy
+        uses: runmymind/clang-tidy-action@v1
+
+      - name: Create and Lint PLJIT
+        run: |
+          mkdir ci_lint_pljit
+          cd ci_lint_pljit
+          cmake -DCMAKE_BUILD_TYPE=Debug ..
+          make lint
