@@ -1,4 +1,4 @@
-name: Build and Lint PLJIT
+name: Build PLJIT
 
 on: 
   push:
@@ -7,10 +7,14 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   pljit:
     runs-on: ubuntu-latest
+    env:
+      CC: clang
+      CXX: clang++
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -20,10 +24,24 @@ jobs:
         with:
           cmake-version: '3.13'
 
-      - name: Create and Build PLJIT
+      - name: Set up Clang
+        uses: egor-tensin/setup-clang@v1
+        with:
+          version: latest
+          platform: x64
+          cc: 1
+
+      - name: Create and Build PLJIT with Clang
         run: |
           mkdir ci_build_pljit
           cd ci_build_pljit
-          cmake -DCMAKE_BUILD_TYPE=Debug ..
+          cmake \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=$CC \
+            -DCMAKE_CXX_COMPILER=$CXX \
+            -DCMAKE_CXX_STANDARD=20 \
+            -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            ..
           make
           ./test/tester
