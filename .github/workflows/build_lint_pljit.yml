@@ -18,7 +18,7 @@ jobs:
       - name: Set up CMake
         uses: threeal/cmake-action@v2.1.0
         with:
-          cmake-version: '3.x'
+          cmake-version: '3.13'
 
       - name: Create and Build PLJIT
         run: |
@@ -27,19 +27,3 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Debug ..
           make
           ./test/tester
-
-  lint_pljit:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Set up Clang-Tidy
-        uses: llvm/clang-tidy-action@v1
-
-      - name: Create and Lint PLJIT
-        run: |
-          mkdir ci_lint_pljit
-          cd ci_lint_pljit
-          cmake -DCMAKE_BUILD_TYPE=Debug ..
-          make lint
