@@ -104,7 +104,7 @@ class Pljit {
                 std::optional<int64_t> result ;
                 {
                     std::shared_lock lock(mtx);
-                    semantic::EvaluationContext evaluationContext(move(parameter_list), semanticAnalyzer[index]->getSymbolTable());
+                    semantic::EvaluationContext evaluationContext(std::move(parameter_list), semanticAnalyzer[index]->getSymbolTable());
                     result = semanticAnalyzer[index]->evaluate(evaluationContext);
                     if (!result.has_value()) {
                         // runtimeErrorMessage will be cleared immediately from output stream

@@ -19,7 +19,7 @@ optional<int64_t> OptimizationVisitor::visitOptimization(FunctionAST& functionAs
             {
                 functionAst.children.clear();
                 unique_ptr<ReturnStatementAST> retStatement = make_unique<ReturnStatementAST>(make_unique<LiteralAST>(result.value())) ;
-                functionAst.children.emplace_back(move(retStatement)) ;
+                functionAst.children.emplace_back(std::move(retStatement)) ;
                 return result ;
             }
             else

@@ -83,7 +83,7 @@ namespace {
                                 UnaryExpressionAST::UnaryType::PLUS :UnaryExpressionAST::UnaryType::MINUS;
             return make_unique<UnaryExpressionAST>(
                 unaryExpression.getManager() , genericToken.getReference() , type ,
-                move(child)) ;
+                std::move(child)) ;
         }
         // only primary expression without unary operator
         const PrimaryExpression& primaryExpression = static_cast<const PrimaryExpression&>(unaryExpression.getChild(0));
@@ -116,8 +116,8 @@ namespace {
         return make_unique<BinaryExpressionAST>
             (
                 multiplicativeExpression.getManager() ,
-                type , move(leftChild)
-                          ,  move(rightChild) , tokenOperator.getReference()
+                type , std::move(leftChild)
+                          ,  std::move(rightChild) , tokenOperator.getReference()
             ) ;
     }
     //---------------------------------------------------------------------------
@@ -148,8 +148,8 @@ namespace {
         return make_unique<BinaryExpressionAST>(
             additiveExpression.getManager() ,
             type ,
-            move(leftChild) ,
-            move(rightChild)
+            std::move(leftChild) ,
+            std::move(rightChild)
         ) ;
     }
     //---------------------------------------------------------------------------
@@ -185,7 +185,7 @@ namespace {
                 (
                     codeManager ,
                     make_unique<IdentifierAST>(identifier.getManager() , identifier.getReference()) ,
-                    move(rightExpression)
+                    std::move(rightExpression)
                 ) ;
         }
         // Return statement
@@ -198,7 +198,7 @@ namespace {
         return make_unique<ReturnStatementAST>
             (
                 codeManager ,
-                move(child)
+                std::move(child)
             );
     }
 //---------------------------------------------------------------------------
@@ -361,7 +361,7 @@ bool FunctionAST::compileCode(const FunctionDeclaration& functionDeclaration) {
 
             returnStatementTriggered |= child->getAstType() == ASTNode::ASTType::RETURN_STATEMENT ;
 
-            children.emplace_back(move(child)) ;
+            children.emplace_back(std::move(child)) ;
         }
     }
     if(!returnStatementTriggered)
@@ -422,8 +422,8 @@ AssignmentStatementAST::AssignmentStatementAST(management::CodeManager* manager)
 {}
 //---------------------------------------------------------------------------
 AssignmentStatementAST::AssignmentStatementAST(management::CodeManager* manager, std::unique_ptr<IdentifierAST> left, std::unique_ptr<ExpressionAST> right) : AssignmentStatementAST(manager){
-    this->leftIdentifier = move(left) ;
-    this->rightExpression = move(right) ;
+    this->leftIdentifier = std::move(left) ;
+    this->rightExpression = std::move(right) ;
 }
 //---------------------------------------------------------------------------
 const IdentifierAST& AssignmentStatementAST::getLeftIdentifier() const {
@@ -453,7 +453,7 @@ ASTNode::ASTType ReturnStatementAST::getAstType() const {
 }
 //---------------------------------------------------------------------------
 ReturnStatementAST::ReturnStatementAST(management::CodeManager* manager, std::unique_ptr<ExpressionAST> input) : StatementAST(manager) {
-    this->input = move(input) ;
+    this->input = std::move(input) ;
 }
 //---------------------------------------------------------------------------
 const ExpressionAST& ReturnStatementAST::getInput() const {
@@ -478,8 +478,8 @@ ASTNode::ASTType BinaryExpressionAST::getAstType() const {
 //---------------------------------------------------------------------------
 BinaryExpressionAST::BinaryExpressionAST(management::CodeManager* manager, BinaryExpressionAST::BinaryType type, std::unique_ptr<ExpressionAST> left, std::unique_ptr<ExpressionAST> right) : ExpressionAST(manager){
     this->binaryType = type ;
-    this->leftExpression = move(left) ;
-    this->rightExpression = move(right) ;
+    this->leftExpression = std::move(left) ;
+    this->rightExpression = std::move(right) ;
 }
 //---------------------------------------------------------------------------
 BinaryExpressionAST::BinaryType BinaryExpressionAST::getBinaryType() const {
@@ -526,7 +526,7 @@ std::optional<int64_t> BinaryExpressionAST::acceptOptimization(OptimizationVisit
     return astVisitor.visitOptimization(*this) ;
 }
 //---------------------------------------------------------------------------
-BinaryExpressionAST::BinaryExpressionAST(management::CodeManager* manager, BinaryExpressionAST::BinaryType type, std::unique_ptr<ExpressionAST> left, std::unique_ptr<ExpressionAST> right, management::CodeReference reference) : BinaryExpressionAST(manager , type , move(left) , move(right)){
+BinaryExpressionAST::BinaryExpressionAST(management::CodeManager* manager, BinaryExpressionAST::BinaryType type, std::unique_ptr<ExpressionAST> left, std::unique_ptr<ExpressionAST> right, management::CodeReference reference) : BinaryExpressionAST(manager , type , std::move(left) , std::move(right)){
     codeReference = reference ;
 }
 //---------------------------------------------------------------------------
@@ -536,7 +536,7 @@ ASTNode::ASTType UnaryExpressionAST::getAstType() const {
 //---------------------------------------------------------------------------
 UnaryExpressionAST::UnaryExpressionAST(management::CodeManager* manager, management::CodeReference codeReference1, UnaryExpressionAST::UnaryType type, std::unique_ptr<ExpressionAST> input) : ExpressionAST(manager , codeReference1){
     this->unaryType = type ;
-    this->input = move(input);
+    this->input = std::move(input);
 }
 //---------------------------------------------------------------------------
 UnaryExpressionAST::UnaryType UnaryExpressionAST::getUnaryType() const {

@@ -50,7 +50,7 @@ TerminalNode::TerminalNode(management::CodeManager* manager) {
 }
 TerminalNode::TerminalNode(management::CodeManager* manager ,management::CodeReference codeReference): TerminalNode(manager) {
     this->codeManager = manager ;
-    this->codeReference = move(codeReference);
+    this->codeReference = std::move(codeReference);
 }
 std::string_view TerminalNode::print_token() const {
     size_t line = codeReference.getStartLineRange().first ;
@@ -78,22 +78,22 @@ bool FunctionDeclaration::recursiveDescentParser(TokenStream& tokenStream) {
     { // PARAMETER
         unique_ptr<ParameterDeclaration> parameter_ptr = make_unique<ParameterDeclaration>(codeManager);
         if (parameter_ptr->recursiveDescentParser(tokenStream)) // optional
-            children.emplace_back(move(parameter_ptr));
+            children.emplace_back(std::move(parameter_ptr));
     }
     { // VARIABLE
         unique_ptr<VariableDeclaration> variable_ptr = make_unique<VariableDeclaration>(codeManager);
         if (variable_ptr->recursiveDescentParser(tokenStream)) // optional
-            children.emplace_back(move(variable_ptr));
+            children.emplace_back(std::move(variable_ptr));
     }
     { // CONSTANT
         unique_ptr<ConstantDeclaration> constant_ptr = make_unique<ConstantDeclaration>(codeManager);
         if (constant_ptr->recursiveDescentParser(tokenStream)) // optional
-            children.emplace_back(move(constant_ptr));
+            children.emplace_back(std::move(constant_ptr));
     }
     { // COMPOUND
         unique_ptr<CompoundStatement> compound_ptr = make_unique<CompoundStatement>(codeManager);
         if (compound_ptr->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(compound_ptr));
+            children.emplace_back(std::move(compound_ptr));
         else {
             return false;
         }
@@ -107,7 +107,7 @@ bool FunctionDeclaration::recursiveDescentParser(TokenStream& tokenStream) {
             TokenStream::Token token = tokenStream.lookup();
             tokenStream.nextToken();
             unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , token.getCodeReference());
-            children.emplace_back(move(genericToken));
+            children.emplace_back(std::move(genericToken));
         }
         else {
             codeManager->printCompileError(tokenStream.lookup().getCodeReference()  , ".") ;
@@ -139,7 +139,7 @@ bool ParameterDeclaration::recursiveDescentParser(TokenStream& tokenStream) {
             string_view token_str = line.substr(start_index , last_index - start_index + 1) ;
             if(token_str == "PARAM") {
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , token.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
                 tokenStream.nextToken();
             }
             else {
@@ -155,7 +155,7 @@ bool ParameterDeclaration::recursiveDescentParser(TokenStream& tokenStream) {
     { // declarator-list
         unique_ptr<DeclaratorList> declaratorList = make_unique<DeclaratorList>(codeManager ) ;
         if(declaratorList->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(declaratorList)) ;
+            children.emplace_back(std::move(declaratorList)) ;
         else {
             return false ;
         }
@@ -202,7 +202,7 @@ bool VariableDeclaration::recursiveDescentParser(TokenStream& tokenStream) {
             string_view token_str = line.substr(start_index , last_index - start_index + 1) ;
             if(token_str == "VAR") {
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
                 tokenStream.nextToken();
             }
             else {
@@ -216,7 +216,7 @@ bool VariableDeclaration::recursiveDescentParser(TokenStream& tokenStream) {
     { // declarator list
         unique_ptr<DeclaratorList> declaratorList = make_unique<DeclaratorList>(codeManager ) ;
         if(declaratorList->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(declaratorList)) ;
+            children.emplace_back(std::move(declaratorList)) ;
         else
             return false ;
     }
@@ -230,7 +230,7 @@ bool VariableDeclaration::recursiveDescentParser(TokenStream& tokenStream) {
         if(tokenStream.lookup().getTokenType() == TokenStream::SEMI_COLON_SEPARATOR) {
             TokenStream::Token token = tokenStream.nextToken();
             unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
-            children.emplace_back(move(genericToken));
+            children.emplace_back(std::move(genericToken));
         }
         else
         {
@@ -264,7 +264,7 @@ bool ConstantDeclaration::recursiveDescentParser(TokenStream& tokenStream) {
             string_view token_str = line.substr(start_index , last_index - start_index + 1) ;
             if(token_str == "CONST") {
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager , token.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
                 tokenStream.nextToken();
             }
             else {
@@ -280,7 +280,7 @@ bool ConstantDeclaration::recursiveDescentParser(TokenStream& tokenStream) {
     { // init-declarator-list
         unique_ptr<InitDeclaratorList> initDeclaratorList = make_unique<InitDeclaratorList>(codeManager) ;
         if(initDeclaratorList->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(initDeclaratorList)) ;
+            children.emplace_back(std::move(initDeclaratorList)) ;
         else
             return false ;
 
@@ -296,7 +296,7 @@ bool ConstantDeclaration::recursiveDescentParser(TokenStream& tokenStream) {
         {
             TokenStream::Token token = tokenStream.nextToken();
             unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
-            children.emplace_back(move(genericToken));
+            children.emplace_back(std::move(genericToken));
         }
         else
         {
@@ -318,7 +318,7 @@ bool DeclaratorList::recursiveDescentParser(TokenStream& tokenStream) {
     { // identifier
         unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager) ;
         if(identifierToken->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(identifierToken)) ;
+            children.emplace_back(std::move(identifierToken)) ;
         else
             return false ;
     }
@@ -328,12 +328,12 @@ bool DeclaratorList::recursiveDescentParser(TokenStream& tokenStream) {
             { // ","
                 TokenStream::Token commaToken = tokenStream.nextToken();
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager, commaToken.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
             }
             { // "identifier"
                 unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager);
                 if (identifierToken->recursiveDescentParser(tokenStream))
-                    children.emplace_back(move(identifierToken));
+                    children.emplace_back(std::move(identifierToken));
                 else {
                     return false;
                 }
@@ -355,7 +355,7 @@ bool InitDeclaratorList::recursiveDescentParser(TokenStream& tokenStream) {
         unique_ptr<InitDeclarator> initDeclarator = make_unique<InitDeclarator>(codeManager);
 
         if (initDeclarator->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(initDeclarator));
+            children.emplace_back(std::move(initDeclarator));
         else {
             return false;
         }
@@ -365,12 +365,12 @@ bool InitDeclaratorList::recursiveDescentParser(TokenStream& tokenStream) {
             { // ","
                 TokenStream::Token commaToken = tokenStream.nextToken();
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager, commaToken.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
             }
             { // "init-declarator"
                 unique_ptr<InitDeclarator> initDeclarator = make_unique<InitDeclarator>(codeManager);
                 if (initDeclarator->recursiveDescentParser(tokenStream))
-                    children.emplace_back(move(initDeclarator));
+                    children.emplace_back(std::move(initDeclarator));
                 else {
                     return false;
                 }
@@ -392,7 +392,7 @@ bool InitDeclarator::recursiveDescentParser(TokenStream& tokenStream) {
     { // identifier
         unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager ) ;
         if(identifierToken->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(identifierToken)) ;
+            children.emplace_back(std::move(identifierToken)) ;
         else
         {
             return false ;
@@ -406,7 +406,7 @@ bool InitDeclarator::recursiveDescentParser(TokenStream& tokenStream) {
         else if (tokenStream.lookup().getTokenType() == TokenStream::CONST_ASSIGNMENT) {
             TokenStream::Token constAssignment = tokenStream.nextToken();
             unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,constAssignment.getCodeReference());
-            children.emplace_back(move(genericToken));
+            children.emplace_back(std::move(genericToken));
         }
         else {
             codeManager->printCompileError(tokenStream.lookup().getCodeReference() , "=") ;
@@ -416,7 +416,7 @@ bool InitDeclarator::recursiveDescentParser(TokenStream& tokenStream) {
     { // literal
         unique_ptr<Literal> literal_ptr = make_unique<Literal>(codeManager) ;
         if(literal_ptr->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(literal_ptr)) ;
+            children.emplace_back(std::move(literal_ptr)) ;
         else {
             return false ;
         }
@@ -445,7 +445,7 @@ bool CompoundStatement::recursiveDescentParser(TokenStream& tokenStream) {
             string_view token_str = line.substr(start_index , last_index - start_index + 1) ;
             if(token_str == "BEGIN") {
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
                 tokenStream.nextToken();
             }
             else {
@@ -461,7 +461,7 @@ bool CompoundStatement::recursiveDescentParser(TokenStream& tokenStream) {
     { // statement-list
         unique_ptr<StatementList> statementList = make_unique<StatementList>(codeManager) ;
         if(statementList->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(statementList)) ;
+            children.emplace_back(std::move(statementList)) ;
         else {
             return false ;
         }
@@ -479,7 +479,7 @@ bool CompoundStatement::recursiveDescentParser(TokenStream& tokenStream) {
             string_view token_str = line.substr(start_index , last_index - start_index + 1) ;
             if(token_str == "END") {
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
                 tokenStream.nextToken();
             }
             else {
@@ -506,7 +506,7 @@ bool StatementList::recursiveDescentParser(TokenStream& tokenStream) {
     { // statement
         unique_ptr<Statement> statement_ptr = make_unique<Statement>(codeManager);
         if(statement_ptr->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(statement_ptr)) ;
+            children.emplace_back(std::move(statement_ptr)) ;
         else
             return false ;
     }
@@ -516,12 +516,12 @@ bool StatementList::recursiveDescentParser(TokenStream& tokenStream) {
             { // ";"
                 TokenStream::Token commaToken = tokenStream.nextToken();
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager, commaToken.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
             }
             { // statement
                 unique_ptr<Statement> statement_ptr = make_unique<Statement>(codeManager);
                 if (statement_ptr->recursiveDescentParser(tokenStream))
-                    children.emplace_back(move(statement_ptr));
+                    children.emplace_back(std::move(statement_ptr));
                 else
                     return false;
             }
@@ -552,13 +552,13 @@ bool Statement::recursiveDescentParser(TokenStream& tokenStream) {
         if(token_str == "RETURN") {
             { // "RETURN"
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,token.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
                 tokenStream.nextToken();
             }
             { // "additive-statement"
                 unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager ) ;
                 if(additiveExpression->recursiveDescentParser(tokenStream))
-                    children.emplace_back(move(additiveExpression)) ;
+                    children.emplace_back(std::move(additiveExpression)) ;
                 else
                     return false ;
             }
@@ -572,7 +572,7 @@ bool Statement::recursiveDescentParser(TokenStream& tokenStream) {
     else if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::IDENTIFIER) {
         unique_ptr<AssignmentExpression> assignmentExpression = make_unique<AssignmentExpression>(codeManager) ;
         if(assignmentExpression->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(assignmentExpression)) ;
+            children.emplace_back(std::move(assignmentExpression)) ;
         else
             return false ;
     }
@@ -594,7 +594,7 @@ bool AdditiveExpression::recursiveDescentParser(TokenStream& tokenStream) {
     { // multiplicative-expression
         unique_ptr<MultiplicativeExpression> multiplicativeExpression = make_unique<MultiplicativeExpression>(codeManager) ;
         if(multiplicativeExpression->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(multiplicativeExpression)) ;
+            children.emplace_back(std::move(multiplicativeExpression)) ;
         else {
             return false ;
         }
@@ -605,12 +605,12 @@ bool AdditiveExpression::recursiveDescentParser(TokenStream& tokenStream) {
             { //('+' | '-')
                 TokenStream::Token operatorToken = tokenStream.nextToken();
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager, operatorToken.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
             }
             { // additive-expression
                 unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager);
                 if (additiveExpression->recursiveDescentParser(tokenStream))
-                    children.emplace_back(move(additiveExpression));
+                    children.emplace_back(std::move(additiveExpression));
                 else {
                     return false;
                 }
@@ -631,7 +631,7 @@ bool MultiplicativeExpression::recursiveDescentParser(TokenStream& tokenStream) 
     { // unary-expression
         unique_ptr<UnaryExpression> unaryExpression = make_unique<UnaryExpression>(codeManager);
         if (unaryExpression->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(unaryExpression)) ;
+            children.emplace_back(std::move(unaryExpression)) ;
         else
             return false ;
     }
@@ -640,12 +640,12 @@ bool MultiplicativeExpression::recursiveDescentParser(TokenStream& tokenStream) 
             { // ('*' | '/')
                 TokenStream::Token operatorToken = tokenStream.nextToken();
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager, operatorToken.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
             }
             { // multiplicative-expression
                 unique_ptr<MultiplicativeExpression> multiplicativeExpression = make_unique<MultiplicativeExpression>(codeManager);
                 if (multiplicativeExpression->recursiveDescentParser(tokenStream))
-                    children.emplace_back(move(multiplicativeExpression));
+                    children.emplace_back(std::move(multiplicativeExpression));
                 else {
                     return false;
                 }
@@ -666,7 +666,7 @@ bool AssignmentExpression::recursiveDescentParser(TokenStream& tokenStream) {
     { // identifier
         unique_ptr<Identifier> identifierToken = make_unique<Identifier>(codeManager) ;
         if(identifierToken->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(identifierToken)) ;
+            children.emplace_back(std::move(identifierToken)) ;
         else
         {
             return false ;
@@ -681,12 +681,12 @@ bool AssignmentExpression::recursiveDescentParser(TokenStream& tokenStream) {
             { // ":="
                 TokenStream::Token token = tokenStream.nextToken();
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager, token.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
             }
             { // "additive-expression"
                 unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager);
                 if (additiveExpression->recursiveDescentParser(tokenStream))
-                    children.emplace_back(move(additiveExpression));
+                    children.emplace_back(std::move(additiveExpression));
                 else
                     return false;
             }
@@ -711,13 +711,13 @@ bool UnaryExpression::recursiveDescentParser(TokenStream& tokenStream) {
         if ((tokenStream.lookup().getTokenType() == TokenStream::TokenType::PLUS_OPERATOR) || (tokenStream.lookup().getTokenType() == TokenStream::TokenType::MINUS_OPERATOR)) {
             TokenStream::Token token = tokenStream.nextToken();
             unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager, token.getCodeReference());
-            children.emplace_back(move(genericToken));
+            children.emplace_back(std::move(genericToken));
         }
     }
     { // primary-expression
         unique_ptr<PrimaryExpression> primaryExpression = make_unique<PrimaryExpression>(codeManager);
         if (primaryExpression->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(primaryExpression));
+            children.emplace_back(std::move(primaryExpression));
         else {
             return false;
         }
@@ -742,7 +742,7 @@ bool PrimaryExpression::recursiveDescentParser(TokenStream& tokenStream) {
     else if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::IDENTIFIER) {
         unique_ptr<Identifier> identifier = make_unique<Identifier>(codeManager) ;
         if(identifier->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(identifier)) ;
+            children.emplace_back(std::move(identifier)) ;
         else
             return false ;
     }
@@ -750,7 +750,7 @@ bool PrimaryExpression::recursiveDescentParser(TokenStream& tokenStream) {
     else if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::LITERAL) {
         unique_ptr<Literal> literal = make_unique<Literal>(codeManager) ;
         if(literal->recursiveDescentParser(tokenStream))
-            children.emplace_back(move(literal)) ;
+            children.emplace_back(std::move(literal)) ;
         else
             return false ;
     }
@@ -759,12 +759,12 @@ bool PrimaryExpression::recursiveDescentParser(TokenStream& tokenStream) {
         { // "("
             TokenStream::Token open_bracket_token = tokenStream.nextToken() ;
             unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,open_bracket_token.getCodeReference());
-            children.emplace_back(move(genericToken));
+            children.emplace_back(std::move(genericToken));
         }
         { // "additive-expression"
             unique_ptr<AdditiveExpression> additiveExpression = make_unique<AdditiveExpression>(codeManager) ;
             if(additiveExpression->recursiveDescentParser(tokenStream))
-                children.emplace_back(move(additiveExpression)) ;
+                children.emplace_back(std::move(additiveExpression)) ;
             else
                 return false ;
         }
@@ -776,7 +776,7 @@ bool PrimaryExpression::recursiveDescentParser(TokenStream& tokenStream) {
             else if(tokenStream.lookup().getTokenType() == TokenStream::TokenType::CLOSE_BRACKET) {
                 TokenStream::Token close_bracket_token = tokenStream.nextToken();
                 unique_ptr<GenericToken> genericToken = make_unique<GenericToken>(this->codeManager ,close_bracket_token.getCodeReference());
-                children.emplace_back(move(genericToken));
+                children.emplace_back(std::move(genericToken));
             }
             else {
                 codeManager->printCompileError(tokenStream.lookup().getCodeReference() , ")") ;
